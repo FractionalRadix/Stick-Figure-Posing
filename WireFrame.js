@@ -1,3 +1,83 @@
+// The Stick class defines a Stick, AND the list of other sticks connected to it.
+class Stick {
+	constructor(start, length, rotation,children) {
+		this.start = start;			// Vector of 3 float values.
+		this.length = length;		// Float
+		this.rotation = rotation;	// Vector of 3 float values.
+		this.children = [];			// List/Array of Stick. (Yes, it's recursive).
+
+		this.end;                   // Cache for the endpoint. Also needed by the drawing code for the last lines... eventually.
+		this.screenPoint;           // Cache for the position of this point on the screen.
+        this.svgLine = null;
+	}
+
+	calculateEndpoint() {
+		// Define a stick from the origin to (0,0,this.length).
+		var res = Vector.create([0,0,this.length]);
+
+		// Rotate it according to the specified rotation.
+		var Rx = Matrix.RotationX(this.rotation.e(1));
+		var Ry = Matrix.RotationY(this.rotation.e(2));
+		var Rz = Matrix.RotationZ(this.rotation.e(3));
+		var R = Rx.multiply(Ry.multiply(Rz));
+		res = R.multiply(res);
+
+		// Shift (translate) this stick to the starting point.
+		res = res.add(this.start);
+
+		this.end = res;
+	}
+
+	/**
+	 * Calculate where the end of this Stick appears on the screen.
+	 * PRE: The endpoint must already have been calculated/updated! //TODO!~ make endpoint NULL or something, and do a check. Also consider a built-in "cache dirty" mechanism.
+	 * @param {Matrix} projection Matrix to project the 3D coordinate onto a plane.
+	 * @param {Matrix} projectionToScreen Matrix to transform coordinates on the projection plane to those on the screen.
+	 */
+	calculateScreenPoint(projection, projectionToScreen) {
+		// Convert the ending point of the stick to a vector of size 4.
+		var endpointVec4 = $V([this.end.e(1), this.end.e(2), this.end.e(3), 1]);
+		var projectedEndpoint = projection.multiply(endpointVec4);
+		var screenEndpoint = projectionToScreen.multiply(projectedEndpoint);
+		this.screenPoint = screenEndpoint;
+	}
+
+    /**
+     * Draw the line segment from the given starting point to the end of the current stick.
+     * If the stick (line segment) has not been added to the SVG yet, create it.
+     * If the stick has been added, simply change update its ending point.
+     * Then, recursively draw all sticks attached to this stick's ending point.
+     * @param {SVG object} svg The SVG element that is home to the stick figure.
+     * @param {Vec4} start2d The starting point of the stick on the screen. Note that only its first 2 elements are relevant: the X-coordinate and the Y-coordinate.
+     * @param {Matrix} projection A 4x4 matrix that transforms the stick figure's world coordinates to a projection screen.
+     * @param {Matrix} projectionToScreen A 4x4 matrix that transforms the projection of the stick figure to screen coordinates.
+     */
+	draw(svg, start2d, projection, projectionToScreen) {
+		this.calculateScreenPoint(projection, projectionToScreen);
+        if (this.svgLine === null) {
+		    if (start2d !== null) {
+			    this.svgLine = addLineSegment(svg, start2d, this.screenPoint, this.screenPoint);
+		    }
+        } else {
+            this.svgLine.setAttribute("x2", this.screenPoint.e(1));
+            this.svgLine.setAttribute("y2", this.screenPoint.e(2));
+        }
+		for (var i = 0; i < this.children.length; i++) {
+			this.children[i].draw(svg, this.screenPoint, projection, projectionToScreen);
+		}
+	}
+
+	propagate() {
+		this.calculateEndpoint();
+		for (var i = 0; i < this.children.length; i++) {
+			var child = this.children[i];
+			child.start = this.end;
+			child.propagate();
+		}
+	}
+}
+
+
 function showWireframe() {
     var svg = document.getElementById("svg1");
 
@@ -8,70 +88,6 @@ function showWireframe() {
 	//   X axis is for into-screen/away-from-screen. (Negative value is away from the camera).
 	//   Y axis is for left/right. (Negative value is to the left of the camera).
 
-    // The Stick class defines a Stick, AND the list of other sticks connected to it.
-    class Stick {
-	    constructor(start, length, rotation,children) {
-            this.start = start;			// Vector of 3 float values.
-		    this.length = length;		// Float
-		    this.rotation = rotation;	// Vector of 3 float values.
-		    this.children = [];			// List/Array of Stick. (Yes, it's recursive).
-
-            this.end;                   // Cache for the endpoint. Also needed by the drawing code for the last lines... eventually.
-            this.screenPoint;           // Cache for the position of this point on the screen.
-        }
-
-        calculateEndpoint() {
-		    // Define a stick from the origin to (0,0,this.length).
-            var res = Vector.create([0,0,this.length]);
-	
-		    // Rotate it according to the specified rotation.
-		    var Rx = Matrix.RotationX(this.rotation.e(1));
-            var Ry = Matrix.RotationY(this.rotation.e(2));
-            var Rz = Matrix.RotationZ(this.rotation.e(3));
-            var R = Rx.multiply(Ry.multiply(Rz));
-		    res = R.multiply(res);
-
-		    // Shift (translate) this stick to the starting point.
-		    res = res.add(this.start);
-
-            this.end = res;
-        }
-
-        /**
-         * Calculate where the end of this Stick appears on the screen.
-         * PRE: The endpoint must already have been calculated/updated! //TODO!~ make endpoint NULL or something, and do a check. Also consider a built-in "cache dirty" mechanism.
-         * @param {Matrix} projection Matrix to project the 3D coordinate onto a plane.
-         * @param {Matrix} projectionToScreen Matrix to transform coordinates on the projection plane to those on the screen.
-         */
-        calculateScreenPoint(projection, projectionToScreen) {
-            // Convert the ending point of the stick to a vector of size 4.
-            var endpointVec4 = $V([this.end.e(1), this.end.e(2), this.end.e(3), 1]);
-            var projectedEndpoint = projection.multiply(endpointVec4);
-            var screenEndpoint = projectionToScreen.multiply(projectedEndpoint);
-            this.screenPoint = screenEndpoint;
-        }
-
-        draw(svg, start2d, projection, projectionToScreen) {
-            this.calculateScreenPoint(projection, projectionToScreen);
-            if (start2d !== null) {
-                addLineSegment(svg, start2d, this.screenPoint, this.screenPoint);
-            }
-            for (var i = 0; i < this.children.length; i++) {
-                this.children[i].draw(svg, this.screenPoint, projection, projectionToScreen);
-            }
-        }
-
-        propagate() {
-            this.calculateEndpoint();
-            for (var i = 0; i < this.children.length; i++) {
-                var child = this.children[i];
-                child.start = this.end;
-                child.propagate();
-            }
-        }
-
-
-	}
 
 	// Define the stick figure.
 	// First, we define the center as a stick with length 0.
@@ -161,6 +177,17 @@ function showWireframe() {
 
     centerStick.draw(svg, null, projection, projectionToScreen);
 
+
+    var rightKnee1 = document.getElementById("rightKnee");
+    rightKnee1.addEventListener('input', function() { 
+            console.log(rightKnee1.value); 
+            var radians = (Math.PI * rightKnee1.value)/ 180.0;
+            rightLowerLegStick.rotation = $V([0.0, radians, 0.0]);
+            rightLowerLegStick.propagate();
+            //TODO!~ Don't use addLineSegment, UPDATE the SVG line segment!
+            rightLowerLegStick.draw(svg, rightLowerLegStick.start, projection, projectionToScreen);
+        }
+    );
 }
 
 function addLineSegment(svg, v1, v2) {
@@ -173,4 +200,5 @@ function addLineSegment(svg, v1, v2) {
     lineSegment.style.strokeWidth="1";
     svg.appendChild(lineSegment);
     console.log(lineSegment);
+    return lineSegment;
 }
