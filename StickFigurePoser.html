@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="WFStyle.css">
+    <script language="JavaScript" type="text/javascript" src="WireFrame.js">
+    </script>
+    <!-- Using the Sylvester src for now. May go for Sylvester.js later. -->
+    <script language="JavaScript" type="text/javascript" src="sylvester-0-1-3\sylvester.src.js">
+    </script>
+  </head>
+  <body onload="showWireframe()">
+
+    <div style="float:left">
+        Torso bent forwards/backwards (degrees):
+        <input type="range" min="-10" max="90" value="0" class="WFJointSlider" id="centerForward">
+        Torso bent leftwards/rightwards (degrees):
+        <input type="range" min="-20" max="20" value="0" class="WFJointSlider" id="centerSideward">  
+
+        Left elbow (degrees):
+        <input type="range" min="0" max="180" value="90" class="WFJointSlider" id="leftElbow">
+        Right elbow (degrees):
+        <input type="range" min="0" max="180" value="90" class="WFJointSlider" id="rightElbow">
+
+        Left knee (degrees):
+        <input type="range" min="0" max="180" value="90" class="WFJointSlider" id="leftKnee">
+        Right knee (degrees):
+        <input type="range" min="0" max="180" value="90" class="WFJointSlider" id="rightKnee">
+    </div>
+
+    <svg id="svg1" width="400" height="400" style="float:left">
+      <!-- Put our first stick figure in the spotlights! -->
+      <circle cx="200" cy="200" r="50" stroke="black" stroke-width="1" fill="yellow" />
+    </svg>
+
+    <canvas id="canvas3d" width="400" height="400">
+      <!-- WebGL version goes here... someday. -->
+    </canvas>
+  </body>
+</html> 
