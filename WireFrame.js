@@ -45,7 +45,7 @@ class Stick {
 	 * @param {Matrix} projectionToScreen Matrix to transform coordinates on the projection plane to those on the screen.
      * @return {Vector} Vector describing where the given point is on the user's screen. Note that only the first two parameters of this Vector are relevant: the X and the Y coordinate.
      */
-	static calculateScreenPoint2(worldPoint, projection, projectionToScreen) {
+	static calculateScreenPoint(worldPoint, projection, projectionToScreen) {
 		var worldPointVec4 = $V([worldPoint.e(1), worldPoint.e(2), worldPoint.e(3), 1]);
 		var projectedPoint = projection.multiply(worldPointVec4);
 		var screenPoint = projectionToScreen.multiply(projectedPoint);
@@ -63,7 +63,7 @@ class Stick {
      * @param {Matrix} projectionToScreen A 4x4 matrix that transforms the projection of the stick figure to screen coordinates.
      */
 	draw(svg, start2d, projection, projectionToScreen) {
-		this.calculateScreenPoint(projection, projectionToScreen);
+        this.screenPoint = Stick.calculateScreenPoint(this.end, projection, projectionToScreen);
         if (this.svgLine === null) {
 		    if (start2d !== null) {
 			    this.svgLine = addLineSegment(svg, start2d, this.screenPoint, this.screenPoint);
@@ -194,7 +194,7 @@ function showWireframe() {
             var radians = (Math.PI * jointSlider.value)/ 180.0;
             affectedJoint.rotation = $V([radians, 0.0, 0.0]);
             affectedJoint.propagate();
-            var start2d = Stick.calculateScreenPoint2(affectedJoint.start, projection, projectionToScreen);
+            var start2d = Stick.calculateScreenPoint(affectedJoint.start, projection, projectionToScreen);
             affectedJoint.draw(svg, start2d, projection, projectionToScreen);
     }
 
@@ -202,7 +202,7 @@ function showWireframe() {
             var radians = (Math.PI * jointSlider.value)/ 180.0;
             affectedJoint.rotation = $V([0.0, radians, 0.0]);
             affectedJoint.propagate();
-            var start2d = Stick.calculateScreenPoint2(affectedJoint.start, projection, projectionToScreen);
+            var start2d = Stick.calculateScreenPoint(affectedJoint.start, projection, projectionToScreen);
             affectedJoint.draw(svg, start2d, projection, projectionToScreen);
     }
 
