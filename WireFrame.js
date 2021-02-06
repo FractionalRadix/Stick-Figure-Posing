@@ -35,13 +35,23 @@ class Stick {
 	 * @param {Matrix} projectionToScreen Matrix to transform coordinates on the projection plane to those on the screen.
 	 */
 	calculateScreenPoint(projection, projectionToScreen) {
-		// Convert the ending point of the stick to a vector of size 4.
-		var endpointVec4 = $V([this.end.e(1), this.end.e(2), this.end.e(3), 1]);
-		var projectedEndpoint = projection.multiply(endpointVec4);
-		var screenEndpoint = projectionToScreen.multiply(projectedEndpoint);
-		this.screenPoint = screenEndpoint;
+        this.screenPoint = Stick.calculateScreenPoint2(this.end, projection, projectionToScreen);
 	}
 
+	/**
+     * Determine the screen position of a given point in world coordinates.
+     * In other words, if (x,y,z) is a point in the stick figure's world, this function calculates where that point is on the screen.
+	 * @param {Matrix} projection Matrix to project the 3D coordinate onto a plane.
+	 * @param {Matrix} projectionToScreen Matrix to transform coordinates on the projection plane to those on the screen.
+     * @return {Vector} Vector describing where the given point is on the user's screen. Note that only the first two parameters of this Vector are relevant: the X and the Y coordinate.
+     */
+	static calculateScreenPoint2(worldPoint, projection, projectionToScreen) {
+		var worldPointVec4 = $V([worldPoint.e(1), worldPoint.e(2), worldPoint.e(3), 1]);
+		var projectedPoint = projection.multiply(worldPointVec4);
+		var screenPoint = projectionToScreen.multiply(projectedPoint);
+		return screenPoint;
+	}
+    
     /**
      * Draw the line segment from the given starting point to the end of the current stick.
      * If the stick (line segment) has not been added to the SVG yet, create it.
@@ -59,9 +69,12 @@ class Stick {
 			    this.svgLine = addLineSegment(svg, start2d, this.screenPoint, this.screenPoint);
 		    }
         } else {
+            this.svgLine.setAttribute("x1", start2d.e(1));
+            this.svgLine.setAttribute("y1", start2d.e(2));
             this.svgLine.setAttribute("x2", this.screenPoint.e(1));
             this.svgLine.setAttribute("y2", this.screenPoint.e(2));
         }
+
 		for (var i = 0; i < this.children.length; i++) {
 			this.children[i].draw(svg, this.screenPoint, projection, projectionToScreen);
 		}
@@ -106,8 +119,7 @@ function showWireframe() {
 	// Add the stick for the left lower leg.
     const leftLowerLegStick = new Stick(leftUpperLegStick.end, 0.40, $V([0.01, Math.PI, 0.0]), []);
     leftUpperLegStick.children.push(leftLowerLegStick);
-    // Add the stick for the left foot.
-    //TODO!+
+    //TODO!+ Add the stick for the left foot.
 
     // Add the right leg: from the hip to the toes.
     // Add the stick going to the right hip.
@@ -119,9 +131,7 @@ function showWireframe() {
     // Add the stick for the right lower leg.
     const rightLowerLegStick = new Stick(rightUpperLegStick.end, 0.40, $V([0.01, Math.PI, 0.0]), []);
     rightUpperLegStick.children.push(rightLowerLegStick);
-    // Add the stick for the right foot.
-    //TODO!+
-
+    //TODO!+ Add the stick for the right foot.
 
     // Add the left arm: from the neck (!) to the wrist.
     // Add the stick going to the left shoulder.
@@ -132,7 +142,7 @@ function showWireframe() {
     leftShoulderStick.children.push(leftUpperArmStick);
     const leftLowerArmStick = new Stick(leftUpperArmStick.end, 0.30, $V([-1.0, 0.0, 0.0]), []);
     leftUpperArmStick.children.push(leftLowerArmStick);
-	//TODO!+ Add a circle for the hand...
+	//TODO?+ Add a circle for the hand...
 
     // Add the right arm: from the neck (!) to the wrist.
     // Add the stick going to the right shoulder.
@@ -143,7 +153,7 @@ function showWireframe() {
     rightShoulderStick.children.push(rightUpperArmStick);
     const rightLowerArmStick = new Stick(rightUpperArmStick.end, 0.30, $V([+1.0, 0.0, 0.0]), []);
     rightUpperArmStick.children.push(rightLowerArmStick);
-	//TODO!+ Add a circle for the hand...
+	//TODO?+ Add a circle for the hand...
 
 
 
@@ -180,42 +190,39 @@ function showWireframe() {
 
     centerStick.draw(svg, null, projection, projectionToScreen);
 
+    function modifyRotationAroundXAxis(jointSlider, affectedJoint) {
+            var radians = (Math.PI * jointSlider.value)/ 180.0;
+            affectedJoint.rotation = $V([radians, 0.0, 0.0]);
+            affectedJoint.propagate();
+            var start2d = Stick.calculateScreenPoint2(affectedJoint.start, projection, projectionToScreen);
+            affectedJoint.draw(svg, start2d, projection, projectionToScreen);
+    }
+
+    function modifyRotationAroundYAxis(jointSlider, affectedJoint) {
+            var radians = (Math.PI * jointSlider.value)/ 180.0;
+            affectedJoint.rotation = $V([0.0, radians, 0.0]);
+            affectedJoint.propagate();
+            var start2d = Stick.calculateScreenPoint2(affectedJoint.start, projection, projectionToScreen);
+            affectedJoint.draw(svg, start2d, projection, projectionToScreen);
+    }
+
+    var torsoLeftRight = document.getElementById("centerSideward");
+    torsoLeftRight.addEventListener('input', () => modifyRotationAroundXAxis(torsoLeftRight, backStick));
+
+    var torsoForward = document.getElementById("centerForward");
+    torsoForward.addEventListener('input', () => modifyRotationAroundYAxis(torsoForward, backStick));
 
     var rightKnee = document.getElementById("rightKnee");
-    rightKnee.addEventListener('input', function() { 
-            var radians = (Math.PI * rightKnee.value)/ 180.0;
-            rightLowerLegStick.rotation = $V([0.0, radians, 0.0]);
-            rightLowerLegStick.propagate();
-            rightLowerLegStick.draw(svg, rightLowerLegStick.start, projection, projectionToScreen);
-        }
-    );
+    rightKnee.addEventListener('input', () => modifyRotationAroundYAxis(rightKnee, rightLowerLegStick));
 
     var leftKnee = document.getElementById("leftKnee");
-    leftKnee.addEventListener('input', function() { 
-            var radians = (Math.PI * leftKnee.value)/ 180.0;
-            leftLowerLegStick.rotation = $V([0.0, radians, 0.0]);
-            leftLowerLegStick.propagate();
-            leftLowerLegStick.draw(svg, leftLowerLegStick.start, projection, projectionToScreen);
-        }
-    );
+    leftKnee.addEventListener('input', () => modifyRotationAroundYAxis(leftKnee, leftLowerLegStick));
 
     var leftElbow = document.getElementById("leftElbow");
-    leftElbow.addEventListener('input', function() {
-            var radians = (Math.PI * leftElbow.value)/ 180.0;
-            leftLowerArmStick.rotation = $V([0.0, radians, 0.0]);
-            leftLowerArmStick.propagate();
-            leftLowerArmStick.draw(svg, leftLowerArmStick.start, projection, projectionToScreen);
-        }
-    );
+    leftElbow.addEventListener('input', () => modifyRotationAroundYAxis(leftElbow, leftLowerArmStick));
 
     var rightElbow = document.getElementById("rightElbow");
-    rightElbow.addEventListener('input', function() {
-            var radians = (Math.PI * rightElbow.value)/ 180.0;
-            rightLowerArmStick.rotation = $V([0.0, radians, 0.0]);
-            rightLowerArmStick.propagate();
-            rightLowerArmStick.draw(svg, rightLowerArmStick.start, projection, projectionToScreen);
-        }
-    );
+    rightElbow.addEventListener('input', () => modifyRotationAroundYAxis(rightElbow, rightLowerArmStick));
 }
 
 function addLineSegment(svg, v1, v2) {
