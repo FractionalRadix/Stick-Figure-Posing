@@ -88,32 +88,30 @@ function showWireframe() {
 	//   X axis is for into-screen/away-from-screen. (Negative value is away from the camera).
 	//   Y axis is for left/right. (Negative value is to the left of the camera).
 
-
 	// Define the stick figure.
 	// First, we define the center as a stick with length 0.
 	const centerStick = new Stick($V([0.0, 0.0, 0.0]), 0.0, $V([0.0, 0.0,0.0]), []);
 	// Then, we add the back to the center.
-	const backStick = new Stick($V([0.0,0.0,0.0]), 0.6, $V([0.1, 0.1, 0.1]), []); // centerStick.end , not a hard [0,0,0]
+	const backStick = new Stick($V([0.0, 0.0, 0.0]), 0.6, $V([0.1, 0.1, 0.1]), []); // centerStick.end , not a hard [0,0,0]
 	centerStick.children.push(backStick);
-
-//TODO!~ Swap "left" and "right" in the names below...
+	//TODO!+ Add a circle for the head...
 
     // Add the left leg: from the hip to the toes.
     // Add the stick going to the left hip.
-    const leftHipStick = new Stick(centerStick.end,0.15,$V([+2.0,0.0,0.0]), []);
+    const leftHipStick = new Stick(centerStick.end,0.15,$V([-2.0, 0.0, 0.0]), []);
     centerStick.children.push(leftHipStick);
     // Add the stick for  the left upper leg.
-    const leftUpperLegStick = new Stick(leftHipStick.end, 0.40, $V([0.0,Math.PI,0.0]),[]);
+    const leftUpperLegStick = new Stick(leftHipStick.end, 0.40, $V([0.0, Math.PI, 0.0]),[]);
     leftHipStick.children.push(leftUpperLegStick);
 	// Add the stick for the left lower leg.
-    const leftLowerLegStick = new Stick(leftUpperLegStick.end, 0.40, $V([0.01,Math.PI,0.0]), []);
+    const leftLowerLegStick = new Stick(leftUpperLegStick.end, 0.40, $V([0.01, Math.PI, 0.0]), []);
     leftUpperLegStick.children.push(leftLowerLegStick);
     // Add the stick for the left foot.
     //TODO!+
 
     // Add the right leg: from the hip to the toes.
     // Add the stick going to the right hip.
-    const rightHipStick = new Stick(centerStick.end, 0.15,$V([-2.0,0.0,0.0]), []);
+    const rightHipStick = new Stick(centerStick.end, 0.15,$V([+2.0, 0.0, 0.0]), []);
     centerStick.children.push(rightHipStick);
     // Add the stick for the right upper leg.
     const rightUpperLegStick = new Stick(rightHipStick.end, 0.40, $V([0.0, Math.PI, 0.0]),[]);
@@ -124,23 +122,28 @@ function showWireframe() {
     // Add the stick for the right foot.
     //TODO!+
 
+
     // Add the left arm: from the neck (!) to the wrist.
     // Add the stick going to the left shoulder.
-    const leftShoulderStick = new Stick(backStick.end, 0.15, $V([+1.0,0.0,0.0]), []);
+    const leftShoulderStick = new Stick(backStick.end, 0.15, $V([-1.0, 0.0, 0.0]), []);
     backStick.children.push(leftShoulderStick);
     // Add the stick for the left upper arm.
-    const leftUpperArm = new Stick(leftShoulderStick.end, 0.30, $V([+1.0,0.0,0.0]), []);
-    leftShoulderStick.children.push(leftUpperArm);
-	//TODO!+
+    const leftUpperArmStick = new Stick(leftShoulderStick.end, 0.30, $V([-1.0, 0.0, 0.0]), []);
+    leftShoulderStick.children.push(leftUpperArmStick);
+    const leftLowerArmStick = new Stick(leftUpperArmStick.end, 0.30, $V([-1.0, 0.0, 0.0]), []);
+    leftUpperArmStick.children.push(leftLowerArmStick);
+	//TODO!+ Add a circle for the hand...
 
     // Add the right arm: from the neck (!) to the wrist.
     // Add the stick going to the right shoulder.
-    const rightShoulderStick = new Stick(backStick.end, 0.15, $V([-1.0,0.0,0.0]), []);
+    const rightShoulderStick = new Stick(backStick.end, 0.15, $V([+1.0, 0.0, 0.0]), []);
     backStick.children.push(rightShoulderStick);
 	// Add the stick for the right upper arm.
-    const rightUpperArm = new Stick(rightShoulderStick.end, 0.30, $V([-1.0,0.0,0.0]), []);
-    rightShoulderStick.children.push(rightUpperArm);
-	//TODO!+
+    const rightUpperArmStick = new Stick(rightShoulderStick.end, 0.30, $V([+1.0, 0.0, 0.0]), []);
+    rightShoulderStick.children.push(rightUpperArmStick);
+    const rightLowerArmStick = new Stick(rightUpperArmStick.end, 0.30, $V([+1.0, 0.0, 0.0]), []);
+    rightUpperArmStick.children.push(rightLowerArmStick);
+	//TODO!+ Add a circle for the hand...
 
 
 
@@ -178,14 +181,39 @@ function showWireframe() {
     centerStick.draw(svg, null, projection, projectionToScreen);
 
 
-    var rightKnee1 = document.getElementById("rightKnee");
-    rightKnee1.addEventListener('input', function() { 
-            console.log(rightKnee1.value); 
-            var radians = (Math.PI * rightKnee1.value)/ 180.0;
+    var rightKnee = document.getElementById("rightKnee");
+    rightKnee.addEventListener('input', function() { 
+            var radians = (Math.PI * rightKnee.value)/ 180.0;
             rightLowerLegStick.rotation = $V([0.0, radians, 0.0]);
             rightLowerLegStick.propagate();
-            //TODO!~ Don't use addLineSegment, UPDATE the SVG line segment!
             rightLowerLegStick.draw(svg, rightLowerLegStick.start, projection, projectionToScreen);
+        }
+    );
+
+    var leftKnee = document.getElementById("leftKnee");
+    leftKnee.addEventListener('input', function() { 
+            var radians = (Math.PI * leftKnee.value)/ 180.0;
+            leftLowerLegStick.rotation = $V([0.0, radians, 0.0]);
+            leftLowerLegStick.propagate();
+            leftLowerLegStick.draw(svg, leftLowerLegStick.start, projection, projectionToScreen);
+        }
+    );
+
+    var leftElbow = document.getElementById("leftElbow");
+    leftElbow.addEventListener('input', function() {
+            var radians = (Math.PI * leftElbow.value)/ 180.0;
+            leftLowerArmStick.rotation = $V([0.0, radians, 0.0]);
+            leftLowerArmStick.propagate();
+            leftLowerArmStick.draw(svg, leftLowerArmStick.start, projection, projectionToScreen);
+        }
+    );
+
+    var rightElbow = document.getElementById("rightElbow");
+    rightElbow.addEventListener('input', function() {
+            var radians = (Math.PI * rightElbow.value)/ 180.0;
+            rightLowerArmStick.rotation = $V([0.0, radians, 0.0]);
+            rightLowerArmStick.propagate();
+            rightLowerArmStick.draw(svg, rightLowerArmStick.start, projection, projectionToScreen);
         }
     );
 }
