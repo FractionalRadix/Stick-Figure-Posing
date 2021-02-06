@@ -144,12 +144,22 @@ function showWireframe() {
     // Add the stick for the right foot.
     //TODO!+
 
-    // M. Add the stick going to the left shoulder.
+    // Add the left arm: from the neck (!) to the wrist.
+    // Add the stick going to the left shoulder.
     const leftShoulderStick = new Stick(backStick.end, 0.15, $V([+1.0,0.0,0.0]), []);
     backStick.children.push(leftShoulderStick);
-    // M+1. Add the stick going to the right shoulder.
+    // Add the stick for the left upper arm.
+    const leftUpperArm = new Stick(leftShoulderStick.end, 0.30, $V([+1.0,0.0,0.0]), []);
+    leftShoulderStick.children.push(leftUpperArm);
+	//TODO!+
+
+    // Add the right arm: from the neck (!) to the wrist.
+    // Add the stick going to the right shoulder.
     const rightShoulderStick = new Stick(backStick.end, 0.15, $V([-1.0,0.0,0.0]), []);
     backStick.children.push(rightShoulderStick);
+	// Add the stick for the right upper arm.
+    const rightUpperArm = new Stick(rightShoulderStick.end, 0.30, $V([-1.0,0.0,0.0]), []);
+    rightShoulderStick.children.push(rightUpperArm);
 	//TODO!+
 
 
