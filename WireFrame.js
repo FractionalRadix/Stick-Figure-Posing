@@ -59,16 +59,22 @@ class Stick {
      * @param {Matrix} projectionToScreen A 4x4 matrix that transforms the projection of the stick figure to screen coordinates.
      */
 	draw(svg, start2d, projection, projectionToScreen) {
-        //TODO!+ Add code for the case that you have a circle!
+
         this.screenPoint = Stick.calculateScreenPoint(this.end, projection, projectionToScreen);
         if (this.svgLine === null) {
 		    if (start2d !== null) {
                 if (this.radius > 0.0) {
-                    //TODO!+ Add a circle...
+                    // Add a "circle"
                     // <path d=...  stroke="black" stroke-width="1" fill="white"/>
                     var path = document.createElementNS("http://www.w3.org/2000/svg", 'path');
-                    var polygon = generateRegularPolygon(5, 10.0);
-                    var generatedPath = pointArrayToClosedSVGPath(polygon);
+                    var polygon = generateRegularPolygon(5, this.radius);
+
+                    var locationOnStickFigure = this.instanceTransform.multiply(this.cumulativeTransform);
+                    var worldCoordinatesToScreen = projectionToScreen.multiply(projection);
+                    var completeTransform = worldCoordinatesToScreen.multiply(locationOnStickFigure);
+                    var applied = applyMatrixToArray(completeTransform, polygon);
+
+                    var generatedPath = pointArrayToClosedSVGPath(applied);
                     path.setAttribute("d", generatedPath);
                     path.style.stroke="black";
                     path.style.strokeWidth="1";
@@ -77,12 +83,20 @@ class Stick {
                     console.log(path);
                     this.svgLine = path;
                 } else {
-			        this.svgLine = addLineSegment(svg, start2d, this.screenPoint, this.screenPoint);
+			        this.svgLine = addLineSegment(svg, start2d, this.screenPoint);
                 }
 		    }
         } else {
             if (this.radius > 0.0) {
-                // Update the circle
+                    var polygon = generateRegularPolygon(5, this.radius);
+
+                    var locationOnStickFigure = this.instanceTransform.multiply(this.cumulativeTransform);
+                    var worldCoordinatesToScreen = projectionToScreen.multiply(projection);
+                    var completeTransform = worldCoordinatesToScreen.multiply(locationOnStickFigure);
+                    var applied = applyMatrixToArray(completeTransform, polygon);
+
+                    var generatedPath = pointArrayToClosedSVGPath(applied);
+                    this.svgLine.setAttribute("d", generatedPath);
             } else {
                 this.svgLine.setAttribute("x1", start2d.e(1));
                 this.svgLine.setAttribute("y1", start2d.e(2));
@@ -300,15 +314,9 @@ function applyMatrixToArray(matrix, vectorArray) {
 
 	var res = [];
 
-    console.log(matrix);
 	vectorArray.forEach( function(position) { 
-        console.log(position);
-        var cur = matrix.multiply(position);
-        console.log(cur);
-		res.push(cur);
+		res.push(matrix.multiply(position));
 	});
-
-    console.log(res);
 
 	return res;
 }
@@ -325,7 +333,8 @@ function pointArrayToClosedSVGPath(vectorArray) {
           str += "M " + x + " " + y + " ";
         }
         else {
-          str += "L " + x + " " + y + " "; //TODO!~ Consider using 'C' for "curve to" or 'S' for "Smooth curve to" !
+          //TODO?+ See if we can use "C" (curve) or  "S" (smooth curve). 
+          str += "L " + x + " " + y + " ";
         }
     }
     str += "Z";
