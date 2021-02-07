@@ -1,18 +1,19 @@
 // The Stick class defines a Stick, AND the list of other sticks connected to it.
 class Stick {
 	constructor(start, length, rotation,children) {
-		this.start = start;			// Vector of 3 float values.
-		this.length = length;		// Float
-		this.rotation = rotation;	// Vector of 3 float values.
-		this.children = [];			// List/Array of Stick. (Yes, it's recursive).
+		this.start = start;			// Starting point of this Stick instance, in world coordinates. Vector of 3 float values.
+		this.length = length;		// Length of the stick in world coordinates. Float.
+		this.rotation = rotation;	// Rotation of this Stick instance, applied from the point "start". Vector of 3 float values.
+		this.children = [];			// List/Array of Stick instances. (Yes, it's recursive - our Stick figures are trees of Stick instances).
 
-		this.end;                   // Cache for the endpoint. Also needed by the drawing code for the last lines... eventually.
+		this.end;                   // Cache for the endpoint of this Stick instance, in world coordinates. Also needed by the drawing code for the last lines... eventually.
 		this.screenPoint;           // Cache for the position of this point on the screen.
-        this.svgLine = null;
+        this.svgLine = null;        // Reference to the SVG "line" element that represents this particular Stick instance.
 
-        //TODO!+ Start using these ones...
         this.instanceTransform;     // 4 x 4 transformation matrix that applies the rotation and translation for this specific Stick instance.
         this.cumulativeTransform;   // 4 x 4 transformation matrix that applies all the cumulative transformations of the parent Sticks.
+
+        this.radius = 0.0;          // Dirty hack: if radius > 0.0, then we have a circle instead of a point. We use this to add a circle for the head, and perhaps for the hands too.
 	}
 
     calculateEndpoint() {
@@ -58,16 +59,36 @@ class Stick {
      * @param {Matrix} projectionToScreen A 4x4 matrix that transforms the projection of the stick figure to screen coordinates.
      */
 	draw(svg, start2d, projection, projectionToScreen) {
+        //TODO!+ Add code for the case that you have a circle!
         this.screenPoint = Stick.calculateScreenPoint(this.end, projection, projectionToScreen);
         if (this.svgLine === null) {
 		    if (start2d !== null) {
-			    this.svgLine = addLineSegment(svg, start2d, this.screenPoint, this.screenPoint);
+                if (this.radius > 0.0) {
+                    //TODO!+ Add a circle...
+                    // <path d=...  stroke="black" stroke-width="1" fill="white"/>
+                    var path = document.createElementNS("http://www.w3.org/2000/svg", 'path');
+                    var polygon = generateRegularPolygon(5, 10.0);
+                    var generatedPath = pointArrayToClosedSVGPath(polygon);
+                    path.setAttribute("d", generatedPath);
+                    path.style.stroke="black";
+                    path.style.strokeWidth="1";
+                    path.fill="white";
+                    svg.appendChild(path);
+                    console.log(path);
+                    this.svgLine = path;
+                } else {
+			        this.svgLine = addLineSegment(svg, start2d, this.screenPoint, this.screenPoint);
+                }
 		    }
         } else {
-            this.svgLine.setAttribute("x1", start2d.e(1));
-            this.svgLine.setAttribute("y1", start2d.e(2));
-            this.svgLine.setAttribute("x2", this.screenPoint.e(1));
-            this.svgLine.setAttribute("y2", this.screenPoint.e(2));
+            if (this.radius > 0.0) {
+                // Update the circle
+            } else {
+                this.svgLine.setAttribute("x1", start2d.e(1));
+                this.svgLine.setAttribute("y1", start2d.e(2));
+                this.svgLine.setAttribute("x2", this.screenPoint.e(1));
+                this.svgLine.setAttribute("y2", this.screenPoint.e(2));
+            }
         }
 
 		for (var i = 0; i < this.children.length; i++) {
@@ -111,7 +132,10 @@ function showWireframe() {
 	// Then, we add the back to the center.
 	const backStick = new Stick($V([0.0, 0.0, 0.0]), 0.6, $V([0.1, 0.1, 0.1]), []); // centerStick.end , not a hard [0,0,0]
 	centerStick.children.push(backStick);
-	//TODO!+ Add a circle for the head...
+	// Add a circle for the head.
+    const headCircle = new Stick(backStick.end, 0.20, $V([0.0, 0.0, 0.0]), []);
+    headCircle.radius = 0.15;
+    backStick.children.push(headCircle);
 
     // Add the left leg: from the hip to the toes.
     // Add the stick going to the left hip.
@@ -139,7 +163,7 @@ function showWireframe() {
 
     // Add the left arm: from the neck (!) to the wrist.
     // Add the stick going to the left shoulder.
-    const leftShoulderStick = new Stick(backStick.end, 0.15, $V([-1.0, 0.0, 0.0]), []);
+    const leftShoulderStick = new Stick(backStick.end, 0.15, $V([-0.5 * Math.PI, 0.0, 0.0]), []);
     backStick.children.push(leftShoulderStick);
     // Add the stick for the left upper arm.
     const leftUpperArmStick = new Stick(leftShoulderStick.end, 0.30, $V([-1.0, 0.0, 0.0]), []);
@@ -150,7 +174,7 @@ function showWireframe() {
 
     // Add the right arm: from the neck (!) to the wrist.
     // Add the stick going to the right shoulder.
-    const rightShoulderStick = new Stick(backStick.end, 0.15, $V([+1.0, 0.0, 0.0]), []);
+    const rightShoulderStick = new Stick(backStick.end, 0.15, $V([0.5 * Math.PI, 0.0, 0.0]), []);
     backStick.children.push(rightShoulderStick);
 	// Add the stick for the right upper arm.
     const rightUpperArmStick = new Stick(rightShoulderStick.end, 0.30, $V([+1.0, 0.0, 0.0]), []);
@@ -158,7 +182,6 @@ function showWireframe() {
     const rightLowerArmStick = new Stick(rightUpperArmStick.end, 0.30, $V([+1.0, 0.0, 0.0]), []);
     rightUpperArmStick.children.push(rightLowerArmStick);
 	//TODO?+ Add a circle for the hand...
-
 
     centerStick.propagateMatrices(Matrix.I(4));
     centerStick.propagate();
@@ -246,37 +269,65 @@ function addLineSegment(svg, v1, v2) {
 }
 
 /**
- * Create a 4x4 translation matrix.
- * @param {Vector} t A three-dimensional vector that specifies the translation.
- * @return {Matrix} A 4x4 matrix to translate a point by the given Vector.
+ * Generates the points for a regular polygon, on the Oyz-plane, centered at the origin.
+ * If the polygon has enough points, it will resemble a circle.
+ * @param {int} n Number of points on the polygon; MUST be greater than 0.
+ * @param {float} radius Radius of the polygon.
+ * @return {[Vector]} An array of 3D vectors. Each point is a point on the polygon; the points are specified in order.
  */
-function TranslationMatrix(t) {
-	var res = Matrix.create(
-		[
-			[1,0,0,t.e(1)],
-			[0,1,0,t.e(2)],
-			[0,0,1,t.e(3)],
-			[0,0,0,     1],
-		]
-	);
+function generateRegularPolygon(n, radius) {
+	var res = [];
+	var delta = (2.0 * Math.PI) / n;
+	for (var i = 0; i < n; i++) {
+		var angle = i * delta;
+		var x = 0;
+		var y = radius * Math.cos(angle);
+		var z = radius * Math.sin(angle);
+		var P = $V([x,y,z,1]);
+		res.push(P);
+	}
 	return res;
 }
 
 /**
- * Given a 3x3 transformation matrix, add a row and a column to make it a 4x4 matrix.
- * The new elements are all 0, except the one at (4,4), which will be 1.
- * This makes it a 4x4 transformation matrix, allowing us to use it for translation.
- * @param {Matrix} m A 3x3 transformation matrix.
- * @return {Matrix} A 4x4 transformation matrix, that is the 4x4 version of the 3x3 matrix provided as input.
+ * Given a 4x4 (transformation) matrix, and an array of 4-dimensional vectors (points in a 3D space with an extra element),
+ * determine the product of this matrix for each of these elements.
+ * @param {Matrix} matrix A 4x4 transformation matrix.
+ * @param {[Vector]} vectorArray An array of 4-dimensional vectors.
+ * @return {[Vector]} A transformation of the input array; each vector is the product of 'matrix' with the corresponding element in the input array.
  */
-function create4x4TransformationMatrix(m) {
-	var res = Matrix.create(
-		[
-			[m.e(1,1), m.e(1,2), m.e(1,3), 0],
-			[m.e(2,1), m.e(2,2), m.e(2,3), 0],
-			[m.e(3,1), m.e(3,2), m.e(3,3), 0],
-			[       0,        0,        0, 1]
-		]
-	);
+function applyMatrixToArray(matrix, vectorArray) {
+
+	var res = [];
+
+    console.log(matrix);
+	vectorArray.forEach( function(position) { 
+        console.log(position);
+        var cur = matrix.multiply(position);
+        console.log(cur);
+		res.push(cur);
+	});
+
+    console.log(res);
+
 	return res;
+}
+
+/** Given an array of points, generate the SVG "path" string. 
+ * The generated path visits all points in the array in order, starting and ending at the first.
+ */
+function pointArrayToClosedSVGPath(vectorArray) {
+    var str = "";
+    for (var i = 0; i < vectorArray.length; i++) {
+        var x = vectorArray[i].e(1);
+        var y = vectorArray[i].e(2);
+        if (i === 0) {
+          str += "M " + x + " " + y + " ";
+        }
+        else {
+          str += "L " + x + " " + y + " "; //TODO!~ Consider using 'C' for "curve to" or 'S' for "Smooth curve to" !
+        }
+    }
+    str += "Z";
+    return str;
 }
