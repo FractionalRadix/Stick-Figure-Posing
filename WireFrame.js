@@ -8,12 +8,12 @@ class Stick {
 
 		this.end;                   // Cache for the endpoint of this Stick instance, in world coordinates. Also needed by the drawing code for the last lines... eventually.
 		this.screenPoint;           // Cache for the position of this point on the screen.
-        this.svgLine = null;        // Reference to the SVG "line" element that represents this particular Stick instance.
+        this.svgElement = null;     // Reference to the SVG element that represents this particular Stick instance.
 
         this.instanceTransform;     // 4 x 4 transformation matrix that applies the rotation and translation for this specific Stick instance.
         this.cumulativeTransform;   // 4 x 4 transformation matrix that applies all the cumulative transformations of the parent Sticks.
 
-        this.radius = 0.0;          // Dirty hack: if radius > 0.0, then we have a circle instead of a point. We use this to add a circle for the head, and perhaps for the hands too.
+        this.polygon = null;        // Dirty hack: if polygon===null, we draw a Stick. Otherwise, we draw the polygon specified in this variable. It is then an Array of Vector ([Vector]).
 	}
 
     calculateEndpoint() {
@@ -61,18 +61,17 @@ class Stick {
 	draw(svg, start2d, projection, projectionToScreen) {
 
         this.screenPoint = Stick.calculateScreenPoint(this.end, projection, projectionToScreen);
-        if (this.svgLine === null) {
+        if (this.svgElement === null) {
 		    if (start2d !== null) {
-                if (this.radius > 0.0) {
-                    // Add a "circle"
+                if (this.polygon !== null) {
+                    // Add a regular polygon.
                     // <path d=...  stroke="black" stroke-width="1" fill="white"/>
                     var path = document.createElementNS("http://www.w3.org/2000/svg", 'path');
-                    var polygon = generateRegularPolygon(5, this.radius);
 
                     var locationOnStickFigure = this.instanceTransform.multiply(this.cumulativeTransform);
                     var worldCoordinatesToScreen = projectionToScreen.multiply(projection);
                     var completeTransform = worldCoordinatesToScreen.multiply(locationOnStickFigure);
-                    var applied = applyMatrixToArray(completeTransform, polygon);
+                    var applied = applyMatrixToArray(completeTransform, this.polygon);
 
                     var generatedPath = pointArrayToClosedSVGPath(applied);
                     path.setAttribute("d", generatedPath);
@@ -81,27 +80,26 @@ class Stick {
                     path.style.fill="none";
                     svg.appendChild(path);
                     console.log(path);
-                    this.svgLine = path;
+                    this.svgElement = path;
                 } else {
-			        this.svgLine = addLineSegment(svg, start2d, this.screenPoint);
+			        this.svgElement = addLineSegment(svg, start2d, this.screenPoint);
                 }
 		    }
         } else {
-            if (this.radius > 0.0) {
-                    var polygon = generateRegularPolygon(5, this.radius);
+            if (this.polygon !== null) {
 
                     var locationOnStickFigure = this.instanceTransform.multiply(this.cumulativeTransform);
                     var worldCoordinatesToScreen = projectionToScreen.multiply(projection);
                     var completeTransform = worldCoordinatesToScreen.multiply(locationOnStickFigure);
-                    var applied = applyMatrixToArray(completeTransform, polygon);
+                    var applied = applyMatrixToArray(completeTransform, this.polygon);
 
                     var generatedPath = pointArrayToClosedSVGPath(applied);
-                    this.svgLine.setAttribute("d", generatedPath);
+                    this.svgElement.setAttribute("d", generatedPath);
             } else {
-                this.svgLine.setAttribute("x1", start2d.e(1));
-                this.svgLine.setAttribute("y1", start2d.e(2));
-                this.svgLine.setAttribute("x2", this.screenPoint.e(1));
-                this.svgLine.setAttribute("y2", this.screenPoint.e(2));
+                this.svgElement.setAttribute("x1", start2d.e(1));
+                this.svgElement.setAttribute("y1", start2d.e(2));
+                this.svgElement.setAttribute("x2", this.screenPoint.e(1));
+                this.svgElement.setAttribute("y2", this.screenPoint.e(2));
             }
         }
 
@@ -148,7 +146,7 @@ function showWireframe() {
 	centerStick.children.push(backStick);
 	// Add a circle for the head.
     const headCircle = new Stick(backStick.end, 0.20, $V([0.0, 0.0, 0.0]), []);
-    headCircle.radius = 0.15;
+    headCircle.polygon = generateRegularPolygon(10, 0.15);
     backStick.children.push(headCircle);
 
     // Add the left leg: from the hip to the toes.
