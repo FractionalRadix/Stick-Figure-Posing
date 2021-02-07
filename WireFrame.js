@@ -78,7 +78,7 @@ class Stick {
                     path.setAttribute("d", generatedPath);
                     path.style.stroke="black";
                     path.style.strokeWidth="1";
-                    path.fill="white";
+                    path.style.fill="none";
                     svg.appendChild(path);
                     console.log(path);
                     this.svgLine = path;
