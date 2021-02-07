@@ -16,36 +16,9 @@ class Stick {
 	}
 
     calculateEndpoint() {
-        var flag = false;
-        if (flag) {
-            this.OLD_calculateEndpoint();
-        } else {
-            this.NEW_calculateEndpoint();
-        }
-    }
-
-    NEW_calculateEndpoint() {
         var P = Vector.create($V([0.0, 0.0, 0.0, 1.0]));
-        var Pt = this.cumulativeTransform.multiply(P);
-        this.end = Pt;
+        this.end = this.cumulativeTransform.multiply(P);
     }
-
-	OLD_calculateEndpoint() {
-		// Define a stick from the origin to (0,0,this.length).
-		var res = Vector.create([0,0,this.length]);
-
-		// Rotate it according to the specified rotation.
-		var Rx = Matrix.RotationX(this.rotation.e(1));
-		var Ry = Matrix.RotationY(this.rotation.e(2));
-		var Rz = Matrix.RotationZ(this.rotation.e(3));
-		var R = Rx.multiply(Ry.multiply(Rz));
-		res = R.multiply(res);
-
-		// Shift (translate) this stick to the starting point.
-		res = res.add(this.start);
-
-		this.end = res;
-	}
 
     calculateMatrix() {
 
@@ -145,10 +118,10 @@ function showWireframe() {
     const leftHipStick = new Stick(centerStick.end,0.15,$V([-2.0, 0.0, 0.0]), []);
     centerStick.children.push(leftHipStick);
     // Add the stick for  the left upper leg.
-    const leftUpperLegStick = new Stick(leftHipStick.end, 0.40, $V([0.0, Math.PI, 0.0]),[]);
+    const leftUpperLegStick = new Stick(leftHipStick.end, 0.40, $V([-0.25*Math.PI, 0.0, 0.0]),[]);
     leftHipStick.children.push(leftUpperLegStick);
 	// Add the stick for the left lower leg.
-    const leftLowerLegStick = new Stick(leftUpperLegStick.end, 0.40, $V([0.01, Math.PI, 0.0]), []);
+    const leftLowerLegStick = new Stick(leftUpperLegStick.end, 0.40, $V([0.0, 0.0, 0.0]), []);
     leftUpperLegStick.children.push(leftLowerLegStick);
     //TODO!+ Add the stick for the left foot.
 
@@ -157,10 +130,10 @@ function showWireframe() {
     const rightHipStick = new Stick(centerStick.end, 0.15,$V([+2.0, 0.0, 0.0]), []);
     centerStick.children.push(rightHipStick);
     // Add the stick for the right upper leg.
-    const rightUpperLegStick = new Stick(rightHipStick.end, 0.40, $V([0.0, Math.PI, 0.0]),[]);
+    const rightUpperLegStick = new Stick(rightHipStick.end, 0.40, $V([+0.25*Math.PI, 0.0, 0.0]),[]);
     rightHipStick.children.push(rightUpperLegStick);
     // Add the stick for the right lower leg.
-    const rightLowerLegStick = new Stick(rightUpperLegStick.end, 0.40, $V([0.01, Math.PI, 0.0]), []);
+    const rightLowerLegStick = new Stick(rightUpperLegStick.end, 0.40, $V([0.0, 0.0, 0.0]), []);
     rightUpperLegStick.children.push(rightLowerLegStick);
     //TODO!+ Add the stick for the right foot.
 
