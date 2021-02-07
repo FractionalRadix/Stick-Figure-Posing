@@ -9,9 +9,28 @@ class Stick {
 		this.end;                   // Cache for the endpoint. Also needed by the drawing code for the last lines... eventually.
 		this.screenPoint;           // Cache for the position of this point on the screen.
         this.svgLine = null;
+
+        //TODO!+ Start using these ones...
+        this.instanceTransform;     // 4 x 4 transformation matrix that applies the rotation and translation for this specific Stick instance.
+        this.cumulativeTransform;   // 4 x 4 transformation matrix that applies all the cumulative transformations of the parent Sticks.
 	}
 
-	calculateEndpoint() {
+    calculateEndpoint() {
+        var flag = false;
+        if (flag) {
+            this.OLD_calculateEndpoint();
+        } else {
+            this.NEW_calculateEndpoint();
+        }
+    }
+
+    NEW_calculateEndpoint() {
+        var P = Vector.create($V([0.0, 0.0, 0.0, 1.0]));
+        var Pt = this.cumulativeTransform.multiply(P);
+        this.end = Pt;
+    }
+
+	OLD_calculateEndpoint() {
 		// Define a stick from the origin to (0,0,this.length).
 		var res = Vector.create([0,0,this.length]);
 
@@ -28,15 +47,18 @@ class Stick {
 		this.end = res;
 	}
 
-	/**
-	 * Calculate where the end of this Stick appears on the screen.
-	 * PRE: The endpoint must already have been calculated/updated! //TODO!~ make endpoint NULL or something, and do a check. Also consider a built-in "cache dirty" mechanism.
-	 * @param {Matrix} projection Matrix to project the 3D coordinate onto a plane.
-	 * @param {Matrix} projectionToScreen Matrix to transform coordinates on the projection plane to those on the screen.
-	 */
-	calculateScreenPoint(projection, projectionToScreen) {
-        this.screenPoint = Stick.calculateScreenPoint2(this.end, projection, projectionToScreen);
-	}
+    calculateMatrix() {
+
+		// Create a translation matrix, that translates a point over "length" meters.
+        var Tz = TranslationMatrix($V([0.0, 0.0, this.length]));
+
+		// Create rotation matrices for the specified rotation.
+		var Rx = create4x4TransformationMatrix(Matrix.RotationX(this.rotation.e(1)));
+		var Ry = create4x4TransformationMatrix(Matrix.RotationY(this.rotation.e(2)));
+		var Rz = create4x4TransformationMatrix(Matrix.RotationZ(this.rotation.e(3)));
+
+		this.instanceTransform = Rx.multiply(Ry.multiply(Rz.multiply(Tz)));
+    }
 
 	/**
      * Determine the screen position of a given point in world coordinates.
@@ -82,12 +104,21 @@ class Stick {
 
 	propagate() {
 		this.calculateEndpoint();
+
 		for (var i = 0; i < this.children.length; i++) {
 			var child = this.children[i];
 			child.start = this.end;
 			child.propagate();
 		}
 	}
+
+    propagateMatrices(transform) {
+        this.calculateMatrix(); // Determines this.instanceTransform.
+        this.cumulativeTransform = transform.multiply(this.instanceTransform);
+        for (var i = 0; i < this.children.length; i++) {
+            this.children[i].propagateMatrices(this.cumulativeTransform);
+        }
+    }
 }
 
 
@@ -156,8 +187,9 @@ function showWireframe() {
 	//TODO?+ Add a circle for the hand...
 
 
-
+    centerStick.propagateMatrices(Matrix.I(4));
     centerStick.propagate();
+
 
 	// Create a matrix that turns these points into screen coordinates.
 
@@ -193,6 +225,7 @@ function showWireframe() {
     function modifyRotationAroundXAxis(jointSlider, affectedJoint) {
             var radians = (Math.PI * jointSlider.value)/ 180.0;
             affectedJoint.rotation = $V([radians, 0.0, 0.0]);
+centerStick.propagateMatrices(Matrix.I(4));
             affectedJoint.propagate();
             var start2d = Stick.calculateScreenPoint(affectedJoint.start, projection, projectionToScreen);
             affectedJoint.draw(svg, start2d, projection, projectionToScreen);
@@ -201,6 +234,7 @@ function showWireframe() {
     function modifyRotationAroundYAxis(jointSlider, affectedJoint) {
             var radians = (Math.PI * jointSlider.value)/ 180.0;
             affectedJoint.rotation = $V([0.0, radians, 0.0]);
+centerStick.propagateMatrices(Matrix.I(4));
             affectedJoint.propagate();
             var start2d = Stick.calculateScreenPoint(affectedJoint.start, projection, projectionToScreen);
             affectedJoint.draw(svg, start2d, projection, projectionToScreen);
@@ -236,4 +270,40 @@ function addLineSegment(svg, v1, v2) {
     svg.appendChild(lineSegment);
     console.log(lineSegment);
     return lineSegment;
+}
+
+/**
+ * Create a 4x4 translation matrix.
+ * @param {Vector} t A three-dimensional vector that specifies the translation.
+ * @return {Matrix} A 4x4 matrix to translate a point by the given Vector.
+ */
+function TranslationMatrix(t) {
+	var res = Matrix.create(
+		[
+			[1,0,0,t.e(1)],
+			[0,1,0,t.e(2)],
+			[0,0,1,t.e(3)],
+			[0,0,0,     1],
+		]
+	);
+	return res;
+}
+
+/**
+ * Given a 3x3 transformation matrix, add a row and a column to make it a 4x4 matrix.
+ * The new elements are all 0, except the one at (4,4), which will be 1.
+ * This makes it a 4x4 transformation matrix, allowing us to use it for translation.
+ * @param {Matrix} m A 3x3 transformation matrix.
+ * @return {Matrix} A 4x4 transformation matrix, that is the 4x4 version of the 3x3 matrix provided as input.
+ */
+function create4x4TransformationMatrix(m) {
+	var res = Matrix.create(
+		[
+			[m.e(1,1), m.e(1,2), m.e(1,3), 0],
+			[m.e(2,1), m.e(2,2), m.e(2,3), 0],
+			[m.e(3,1), m.e(3,2), m.e(3,3), 0],
+			[       0,        0,        0, 1]
+		]
+	);
+	return res;
 }
