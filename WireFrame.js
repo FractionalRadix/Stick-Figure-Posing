@@ -60,6 +60,8 @@ class Stick {
 		return screenPoint;
 	}
     
+
+    //TODO!- Should be done by observers.
     /**
      * Draw the line segment from the given starting point to the end of the current stick.
      * If the stick (line segment) has not been added to the SVG yet, create it.
@@ -132,10 +134,12 @@ class Stick {
         this.end = this.cumulativeTransform.multiply($V([0.0, 0.0, 0.0, 1.0]));
 
 		//TODO?~ For use with the new listener mechanism. Should eventually replace the current "propagate" and "draw".
+        //TODO!+ Need a way for the Observers to distinghuis between a stick and a polygon.
 		if (this.polygon === null) {
 			// Calculate the starting point and the ending point of the Stick.
 			// Then send that information to the Observers.
             //  You MAY want to set the "end" as the "start" for each child node, that saves calculation time.
+            //  Note that you still need to set the very first "start" element.
 
 			this.notifyObservers([this.start,this.end]); //TODO?~ 
 		} else {
@@ -157,9 +161,54 @@ class Stick {
  * It is an Observer of a Stick. Whenever it is notified of a change to the Observed Stick, it redraws its SVG element.
  */
 class SvgStickView {
+    //TODO?~ Maybe the SvgStickView could know for itself if it held a Stick or a Polygon, instead of having to glean this information via "update" ?
+
+    /**
+     * @param {Object} svg Reference to the SVG element on which we want to draw.
+     * @param {Matrix} worldToScreen Matrix that contains the full transform from world coordinates to screen coordinates.
+     */
+    constructor(svg, worldToScreen) {
+        this.svg = svg;
+        this.svgElement = null;
+        this.worldToScreen = worldToScreen;
+    }
+
     update(data) {
-        //TODO!~ Use the data to draw/update a line/polygon in SVG. Using a pre-specified projection matrix.
+        //Use the data to draw/update a line/polygon in SVG. Using a pre-specified projection matrix.
         //console.log(data);
+        var screenPoints = applyMatrixToArray(this.worldToScreen, data);
+        if (data.length == 2) {
+            // It's a stick. Create/update a line segment.
+            if (this.svgElement === null) {
+                this.svgElement = addLineSegment(this.svg, screenPoints[0], screenPoints[1]);
+
+                //TODO!- FOR TESTING/DEBUGGING.
+                this.svgElement.style.stroke="green";    
+                this.svgElement.style.strokeWidth="4";
+                // END OF TESTING/DEBUGGING CODE.
+            } else {
+                this.svgElement.setAttribute("x1", screenPoints[0].e(1));
+                this.svgElement.setAttribute("y1", screenPoints[0].e(2));
+                this.svgElement.setAttribute("x2", screenPoints[1].e(1));
+                this.svgElement.setAttribute("y2", screenPoints[1].e(2));
+            }
+        } else {
+            // It's a polygon. Create/update a polygon.
+            if (this.svgElement === null) {
+                var generatedPath = pointArrayToClosedSVGPath(screenPoints);
+                //TODO?~ Consider using SVG polygon instead of path. But remember that that does not offer the options to make it curve.
+                this.svgElement = addPolygon(this.svg, generatedPath);
+
+                //TODO!- FOR TESTING/DEBUGGING.
+                this.svgElement.style.stroke="green";    
+                this.svgElement.style.strokeWidth="4";
+                // END OF TESTING/DEBUGGING CODE.
+
+            } else {
+                var generatedPath = pointArrayToClosedSVGPath(screenPoints);
+                this.svgElement.setAttribute("d", generatedPath);
+            }
+        }
     }
 }
 
@@ -173,6 +222,38 @@ function showWireframe() {
 	//   X axis is for into-screen/away-from-screen. (Negative value is away from the camera).
 	//   Y axis is for left/right. (Negative value is to the left of the camera).
 
+
+	// Create a matrix that turns these points into screen coordinates.
+
+	// First, we create an orthonormal projection matrix.
+    // The world-coordinate's Y axis becomes the screen-coordinate's X axis.
+	// The world-coordinate's Z axis becomes the screen-coordinate's Y axis.
+	var projection = Matrix.create(
+        [
+		    [0.0, 1.0, 0.0, 0.0],
+		    [0.0, 0.0, 1.0, 0.0],
+		    [0.0, 0.0, 0.0, 0.0],
+		    [0.0, 0.0, 0.0, 1.0]
+		]
+	);
+
+	// Second, convert these to screen coordinates.
+	// Note that on computer screens, a lower Y value is HIGHER on the screen. So we must invert the Y value.
+	// We assume a screen of 400 x 400, and want to put our (0,0) in world coordinates at (200,200) in screen coordinates.
+	// Next, let's assume that 1m in world coordinates should be 50 units in screen coordinates.
+	// That results in scale factors 50 and -50 for the X- and Y-scaling. And translation factors 200 and 200 for the X- and Y-translation.
+	//TODO?~ Should we do this part using 2D coordinates? If it remains a separate step, it'll save time. If we put all matrices together... it'll be faster to make it a single step.
+    var projectionToScreen = Matrix.create(
+        [
+            [+50.0,   0.0, 0.0, +200.0],
+            [  0.0, -50.0, 0.0, +200.0],
+            [  0.0,   0.0, 0.0,    0.0],
+            [  0.0,   0.0, 0.0,    1.0]
+        ]
+    );
+
+    var worldToScreen = projectionToScreen.multiply(projection);
+
 	// Define the stick figure.
 	// First, we define the center as a stick with length 0.
 	const centerStick = new Stick($V([0.0, 0.0, 0.0]), 0.0, $V([0.0, 0.0,0.0]), []);
@@ -184,11 +265,14 @@ function showWireframe() {
     headCircle.polygon = generateRegularPolygon(10, 0.15);
     backStick.children.push(headCircle);
 
-	var head1 = new SvgStickView;
-    var head2 = new SvgStickView;
+    console.log("svg:");
+    console.log(svg);
+	var head1 = new SvgStickView(svg, worldToScreen);
+    //var head2 = new SvgStickView(svg, worldToScreen);
     headCircle.addListener(head1);
-    headCircle.addListener(head2);
-
+    //headCircle.addListener(head2);
+    var back1 = new SvgStickView(svg, worldToScreen);
+    backStick.addListener(back1);
 
     // Add the left leg: from the hip to the toes.
     // Add the stick going to the left hip.
@@ -238,36 +322,6 @@ function showWireframe() {
 
     centerStick.propagateMatrices(Matrix.I(4));
     centerStick.propagate();
-
-
-	// Create a matrix that turns these points into screen coordinates.
-
-	// First, we create an orthonormal projection matrix.
-    // The world-coordinate's Y axis becomes the screen-coordinate's X axis.
-	// The world-coordinate's Z axis becomes the screen-coordinate's Y axis.
-	var projection = Matrix.create(
-        [
-		    [0.0, 1.0, 0.0, 0.0],
-		    [0.0, 0.0, 1.0, 0.0],
-		    [0.0, 0.0, 0.0, 0.0],
-		    [0.0, 0.0, 0.0, 1.0]
-		]
-	);
-
-	// Second, convert these to screen coordinates.
-	// Note that on computer screens, a lower Y value is HIGHER on the screen. So we must invert the Y value.
-	// We assume a screen of 400 x 400, and want to put our (0,0) in world coordinates at (200,200) in screen coordinates.
-	// Next, let's assume that 1m in world coordinates should be 50 units in screen coordinates.
-	// That results in scale factors 50 and -50 for the X- and Y-scaling. And translation factors 200 and 200 for the X- and Y-translation.
-	//TODO?~ Should we do this part using 2D coordinates? If it remains a separate step, it'll save time. If we put all matrices together... it'll be faster to make it a single step.
-    var projectionToScreen = Matrix.create(
-        [
-            [+50.0,   0.0, 0.0, +200.0],
-            [  0.0, -50.0, 0.0, +200.0],
-            [  0.0,   0.0, 0.0,    0.0],
-            [  0.0,   0.0, 0.0,    1.0]
-        ]
-    );
 
     centerStick.draw(svg, null, projection, projectionToScreen);
 
