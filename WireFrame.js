@@ -5,16 +5,28 @@ class Stick {
 		this.length = length;		// Length of the stick in world coordinates. Float.
 		this.rotation = rotation;	// Rotation of this Stick instance, applied from the point "start". Vector of 3 float values.
 		this.children = [];			// List/Array of Stick instances. (Yes, it's recursive - our Stick figures are trees of Stick instances).
-
-		this.end;                   // Cache for the endpoint of this Stick instance, in world coordinates. Also needed by the drawing code for the last lines... eventually.
-		this.screenPoint;           // Cache for the position of this point on the screen.
-        this.svgElement = null;     // Reference to the SVG element that represents this particular Stick instance.
+		this.end;                   // Cache for the endpoint of this Stick instance, in world coordinates.
 
         this.instanceTransform;     // 4 x 4 transformation matrix that applies the rotation and translation for this specific Stick instance.
         this.cumulativeTransform;   // 4 x 4 transformation matrix that applies all the cumulative transformations of the parent Sticks.
 
+		this.screenPoint;           // Cache for the position of this point on the screen.
+        this.svgElement = null;     // Reference to the SVG element that represents this particular Stick instance.
         this.polygon = null;        // Dirty hack: if polygon===null, we draw a Stick. Otherwise, we draw the polygon specified in this variable. It is then an Array of Vector ([Vector]).
+        this.listeners = [];        // UNDER CONSTRUCTION: to separate "Model" (Stick) and "View". Stick will only contain the world positions, "Views" will do the SVG drawing. 
+                                    //   This will allow us to show the same Stick figure simultaneously from different angles.
 	}
+
+    addListener(listener) {
+        this.listeners.push(listener);
+    }
+
+    //TODO!+ Add a method for removing a listener
+    //  Could just remove from the array, or redefine the array using a filter.
+
+    notifyObservers(data) {
+        this.listeners.forEach(x => x.update(data));
+    }
 
     calculateEndpoint() {
         var P = Vector.create($V([0.0, 0.0, 0.0, 1.0]));
@@ -64,9 +76,7 @@ class Stick {
         if (this.svgElement === null) {
 		    if (start2d !== null) {
                 if (this.polygon !== null) {
-                    // Add a regular polygon.
-                    // <path d=...  stroke="black" stroke-width="1" fill="white"/>
-                    var path = document.createElementNS("http://www.w3.org/2000/svg", 'path');
+                    // Draw a polygon instead of a stick.
 
                     var locationOnStickFigure = this.instanceTransform.multiply(this.cumulativeTransform);
                     var worldCoordinatesToScreen = projectionToScreen.multiply(projection);
@@ -74,27 +84,24 @@ class Stick {
                     var applied = applyMatrixToArray(completeTransform, this.polygon);
 
                     var generatedPath = pointArrayToClosedSVGPath(applied);
-                    path.setAttribute("d", generatedPath);
-                    path.style.stroke="black";
-                    path.style.strokeWidth="1";
-                    path.style.fill="none";
-                    svg.appendChild(path);
-                    console.log(path);
-                    this.svgElement = path;
+
+					//TODO?~ Consider using SVG polygon instead of path. But remember that that does not offer the options to make it curve.
+                    this.svgElement = addPolygon(svg, generatedPath);
                 } else {
+                    // Draw a stick.
 			        this.svgElement = addLineSegment(svg, start2d, this.screenPoint);
                 }
 		    }
         } else {
             if (this.polygon !== null) {
 
-                    var locationOnStickFigure = this.instanceTransform.multiply(this.cumulativeTransform);
-                    var worldCoordinatesToScreen = projectionToScreen.multiply(projection);
-                    var completeTransform = worldCoordinatesToScreen.multiply(locationOnStickFigure);
-                    var applied = applyMatrixToArray(completeTransform, this.polygon);
+				var locationOnStickFigure = this.instanceTransform.multiply(this.cumulativeTransform);
+				var worldCoordinatesToScreen = projectionToScreen.multiply(projection);
+				var completeTransform = worldCoordinatesToScreen.multiply(locationOnStickFigure);
+				var applied = applyMatrixToArray(completeTransform, this.polygon);
 
-                    var generatedPath = pointArrayToClosedSVGPath(applied);
-                    this.svgElement.setAttribute("d", generatedPath);
+				var generatedPath = pointArrayToClosedSVGPath(applied);
+				this.svgElement.setAttribute("d", generatedPath);
             } else {
                 this.svgElement.setAttribute("x1", start2d.e(1));
                 this.svgElement.setAttribute("y1", start2d.e(2));
@@ -120,13 +127,41 @@ class Stick {
 
     propagateMatrices(transform) {
         this.calculateMatrix(); // Determines this.instanceTransform.
+        this.start = transform.multiply($V([0.0, 0.0, 0.0, 1.0]));
         this.cumulativeTransform = transform.multiply(this.instanceTransform);
+        this.end = this.cumulativeTransform.multiply($V([0.0, 0.0, 0.0, 1.0]));
+
+		//TODO?~ For use with the new listener mechanism. Should eventually replace the current "propagate" and "draw".
+		if (this.polygon === null) {
+			// Calculate the starting point and the ending point of the Stick.
+			// Then send that information to the Observers.
+            //  You MAY want to set the "end" as the "start" for each child node, that saves calculation time.
+
+			this.notifyObservers([this.start,this.end]); //TODO?~ 
+		} else {
+			// Calculate the points of the transformed Polygon.
+			// Then send that information to the Observers.
+			var transformedPolygon = applyMatrixToArray(this.cumulativeTransform, this.polygon);
+			this.notifyObservers(transformedPolygon);
+		}
+        //End of the code for the new listener mechanism.
+
         for (var i = 0; i < this.children.length; i++) {
             this.children[i].propagateMatrices(this.cumulativeTransform);
         }
     }
 }
 
+/**
+ * An SvgStickView maintains the SVG representation of a Stick.
+ * It is an Observer of a Stick. Whenever it is notified of a change to the Observed Stick, it redraws its SVG element.
+ */
+class SvgStickView {
+    update(data) {
+        //TODO!~ Use the data to draw/update a line/polygon in SVG. Using a pre-specified projection matrix.
+        //console.log(data);
+    }
+}
 
 function showWireframe() {
     var svg = document.getElementById("svg1");
@@ -145,9 +180,15 @@ function showWireframe() {
 	const backStick = new Stick($V([0.0, 0.0, 0.0]), 0.6, $V([0.1, 0.1, 0.1]), []); // centerStick.end , not a hard [0,0,0]
 	centerStick.children.push(backStick);
 	// Add a circle for the head.
-    const headCircle = new Stick(backStick.end, 0.20, $V([0.0, 0.0, 0.0]), []);
+    const headCircle = new Stick(backStick.end, 0.15, $V([0.0, 0.0, 0.0]), []);
     headCircle.polygon = generateRegularPolygon(10, 0.15);
     backStick.children.push(headCircle);
+
+	var head1 = new SvgStickView;
+    var head2 = new SvgStickView;
+    headCircle.addListener(head1);
+    headCircle.addListener(head2);
+
 
     // Add the left leg: from the hip to the toes.
     // Add the stick going to the left hip.
@@ -280,6 +321,17 @@ function addLineSegment(svg, v1, v2) {
     return lineSegment;
 }
 
+function addPolygon(svg, polygon) {
+	var path = document.createElementNS("http://www.w3.org/2000/svg", 'path');
+	path.setAttribute("d", polygon);
+	path.style.stroke="black";
+	path.style.strokeWidth="1";
+	path.style.fill="none";
+	svg.appendChild(path);
+	console.log(path);
+    return path;
+}
+
 /**
  * Generates the points for a regular polygon, on the Oyz-plane, centered at the origin.
  * If the polygon has enough points, it will resemble a circle.
@@ -309,13 +361,8 @@ function generateRegularPolygon(n, radius) {
  * @return {[Vector]} A transformation of the input array; each vector is the product of 'matrix' with the corresponding element in the input array.
  */
 function applyMatrixToArray(matrix, vectorArray) {
-
 	var res = [];
-
-	vectorArray.forEach( function(position) { 
-		res.push(matrix.multiply(position));
-	});
-
+    vectorArray.forEach( point => res.push(matrix.multiply(point)) );
 	return res;
 }
 
@@ -332,6 +379,7 @@ function pointArrayToClosedSVGPath(vectorArray) {
         }
         else {
           //TODO?+ See if we can use "C" (curve) or  "S" (smooth curve). 
+          // Or perhaps "Q", that one seems more likely to work for our case.
           str += "L " + x + " " + y + " ";
         }
     }
