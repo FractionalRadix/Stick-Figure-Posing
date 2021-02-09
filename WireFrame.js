@@ -320,7 +320,8 @@ function showWireframe() {
 
     function modifyRotationAroundXAxis(jointSlider, affectedJoint) {
             var radians = (Math.PI * jointSlider.value)/ 180.0;
-            affectedJoint.rotation = $V([radians, 0.0, 0.0]);
+            var current = affectedJoint.rotation;
+            affectedJoint.rotation = $V([radians, current.e(2), current.e(3)]);
 centerStick.propagateMatrices(Matrix.I(4));
             affectedJoint.propagate();
             var start2d = Stick.calculateScreenPoint(affectedJoint.start, worldCoordinatesToScreenCoordinates);
@@ -329,7 +330,8 @@ centerStick.propagateMatrices(Matrix.I(4));
 
     function modifyRotationAroundYAxis(jointSlider, affectedJoint) {
             var radians = (Math.PI * jointSlider.value)/ 180.0;
-            affectedJoint.rotation = $V([0.0, radians, 0.0]);
+            var current = affectedJoint.rotation;
+            affectedJoint.rotation = $V([current.e(1), radians, current.e(3)]);
 centerStick.propagateMatrices(Matrix.I(4));
             affectedJoint.propagate();
 			var start2d = Stick.calculateScreenPoint(affectedJoint.start, worldCoordinatesToScreenCoordinates);
