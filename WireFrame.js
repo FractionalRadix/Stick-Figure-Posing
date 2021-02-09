@@ -253,16 +253,20 @@ function showWireframe() {
 	// Then, we add the back to the center.
 	const backStick = new Stick($V([0.0, 0.0, 0.0]), 0.6, $V([0.1, 0.1, 0.1]), []); // centerStick.end , not a hard [0,0,0]
 	centerStick.children.push(backStick);
+    /*
+    var back1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
+    backStick.addListener(back1);
+    */
 
 	// Add a circle for the head.
     const headCircle = new Stick(backStick.end, 0.15, $V([0.0, 0.0, 0.0]), []);
     headCircle.polygon = generateRegularPolygon(10, 0.15);
     backStick.children.push(headCircle);
+    /*
 	var head1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
     headCircle.addListener(head1);
+    */
 
-    var back1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
-    backStick.addListener(back1);
 
     // Add the left leg: from the hip to the toes.
     // Add the stick going to the left hip.
