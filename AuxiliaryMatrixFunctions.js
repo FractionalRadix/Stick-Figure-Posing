@@ -8,7 +8,7 @@
  * @return {Matrix} A 4x4 matrix to translate a point by the given Vector.
  */
 function TranslationMatrix(t) {
-	var res = Matrix.create(
+	return Matrix.create(
 		[
 			[1,0,0,t.e(1)],
 			[0,1,0,t.e(2)],
@@ -16,7 +16,6 @@ function TranslationMatrix(t) {
 			[0,0,0,     1],
 		]
 	);
-	return res;
 }
 
 /**
@@ -27,7 +26,7 @@ function TranslationMatrix(t) {
  * @return {Matrix} A 4x4 transformation matrix, that is the 4x4 version of the 3x3 matrix provided as input.
  */
 function create4x4TransformationMatrix(m) {
-	var res = Matrix.create(
+	return Matrix.create(
 		[
 			[m.e(1,1), m.e(1,2), m.e(1,3), 0],
 			[m.e(2,1), m.e(2,2), m.e(2,3), 0],
@@ -35,6 +34,48 @@ function create4x4TransformationMatrix(m) {
 			[       0,        0,        0, 1]
 		]
 	);
+}
+
+/**
+ * Creates an orthogonal projection matrix, to project the Oyz plane on the Oxy plane.
+ * @return {Matrix} A matrix that discards X coordinates, moves Y coordinates to the X axis, and moves Z coordinates to the Y axis.
+ */
+function ProjectionMatrixYZPlane() {
+	return Matrix.create(
+        [
+		    [0.0, 1.0, 0.0, 0.0],
+		    [0.0, 0.0, 1.0, 0.0],
+		    [0.0, 0.0, 0.0, 0.0],
+		    [0.0, 0.0, 0.0, 1.0]
+		]
+	);
+}
+
+/**
+ * Creates an orthogonal projection matrix, to project the Oxz plane on the Oxy plane.
+ * @return {Matrix} A matrix that keeps X coordinates on the X axis, moves Z coordinates to the Y axis, and discards Y coordinates.
+ */
+function ProjectionMatrixXZPlane() {
+    return Matrix.create(
+        [
+		    [1.0, 0.0, 0.0, 0.0],
+		    [0.0, 0.0, 1.0, 0.0],
+		    [0.0, 0.0, 0.0, 0.0],
+		    [0.0, 0.0, 0.0, 1.0]
+		]
+    );
+}
+
+/**
+ * Given a 4x4 (transformation) matrix, and an array of 4-dimensional vectors (points in a 3D space with an extra element),
+ * determine the product of this matrix for each of these elements.
+ * @param {Matrix} matrix A 4x4 transformation matrix.
+ * @param {[Vector]} vectorArray An array of 4-dimensional vectors.
+ * @return {[Vector]} A transformation of the input array; each vector is the product of 'matrix' with the corresponding element in the input array.
+ */
+function applyMatrixToArray(matrix, vectorArray) {
+	var res = [];
+    vectorArray.forEach( point => res.push(matrix.multiply(point)) );
 	return res;
 }
 

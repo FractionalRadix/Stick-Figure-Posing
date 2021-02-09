@@ -223,28 +223,8 @@ function showWireframe() {
 	// Create a matrix that turns these points into screen coordinates.
 
 	// First, we create an orthonormal projection matrix.
-    // The world-coordinate's Y axis becomes the screen-coordinate's X axis.
-	// The world-coordinate's Z axis becomes the screen-coordinate's Y axis.
-	var projectOnYZPlane = Matrix.create(
-        [
-		    [0.0, 1.0, 0.0, 0.0],
-		    [0.0, 0.0, 1.0, 0.0],
-		    [0.0, 0.0, 0.0, 0.0],
-		    [0.0, 0.0, 0.0, 1.0]
-		]
-	);
-
-    // In this alternative matrix:
-    // The world-coordinate's X axis becomes the screen coordinate's X axis.
-    // The world-coordinate's Z axis becomes the screen coordinate's Y axis.
-    var projectOnXZPlane = Matrix.create(
-        [
-		    [1.0, 0.0, 0.0, 0.0],
-		    [0.0, 0.0, 1.0, 0.0],
-		    [0.0, 0.0, 0.0, 0.0],
-		    [0.0, 0.0, 0.0, 1.0]
-		]
-    );
+	var projectOnYZPlane = ProjectionMatrixYZPlane();
+    //var projectOnXZPlane = ProjectionMatrixXZPlane();
 
 	// Second, convert these to screen coordinates.
 	// Note that on computer screens, a lower Y value is HIGHER on the screen. So we must invert the Y value.
@@ -417,19 +397,6 @@ function generateRegularPolygon(n, radius) {
 		var P = $V([x,y,z,1]);
 		res.push(P);
 	}
-	return res;
-}
-
-/**
- * Given a 4x4 (transformation) matrix, and an array of 4-dimensional vectors (points in a 3D space with an extra element),
- * determine the product of this matrix for each of these elements.
- * @param {Matrix} matrix A 4x4 transformation matrix.
- * @param {[Vector]} vectorArray An array of 4-dimensional vectors.
- * @return {[Vector]} A transformation of the input array; each vector is the product of 'matrix' with the corresponding element in the input array.
- */
-function applyMatrixToArray(matrix, vectorArray) {
-	var res = [];
-    vectorArray.forEach( point => res.push(matrix.multiply(point)) );
 	return res;
 }
 
