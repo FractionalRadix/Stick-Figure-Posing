@@ -28,6 +28,7 @@ class Stick {
         this.listeners.forEach(x => x.update(data));
     }
 
+    //TODO!- Replaced by code in propagateMatrices and Observers.
     calculateEndpoint() {
         var P = Vector.create($V([0.0, 0.0, 0.0, 1.0]));
         this.end = this.cumulativeTransform.multiply(P);
@@ -49,14 +50,12 @@ class Stick {
 	/**
      * Determine the screen position of a given point in world coordinates.
      * In other words, if (x,y,z) is a point in the stick figure's world, this function calculates where that point is on the screen.
-	 * @param {Matrix} projection Matrix to project the 3D coordinate onto a plane.
-	 * @param {Matrix} projectionToScreen Matrix to transform coordinates on the projection plane to those on the screen.
+	 * @param {Matrix} worldCoordinatesToScreen Matrix to transform world coordinates to screen coordinates.
      * @return {Vector} Vector describing where the given point is on the user's screen. Note that only the first two parameters of this Vector are relevant: the X and the Y coordinate.
      */
-	static calculateScreenPoint(worldPoint, projection, projectionToScreen) {
+    static calculateScreenPoint(worldPoint, worldCoordinatesToScreen) {
 		var worldPointVec4 = $V([worldPoint.e(1), worldPoint.e(2), worldPoint.e(3), 1]);
-		var projectedPoint = projection.multiply(worldPointVec4);
-		var screenPoint = projectionToScreen.multiply(projectedPoint);
+        var screenPoint = worldCoordinatesToScreen.multiply(worldPointVec4);
 		return screenPoint;
 	}
     
@@ -69,22 +68,20 @@ class Stick {
      * Then, recursively draw all sticks attached to this stick's ending point.
      * @param {SVG object} svg The SVG element that is home to the stick figure.
      * @param {Vec4} start2d The starting point of the stick on the screen. Note that only its first 2 elements are relevant: the X-coordinate and the Y-coordinate.
-     * @param {Matrix} projection A 4x4 matrix that transforms the stick figure's world coordinates to a projection screen.
-     * @param {Matrix} projectionToScreen A 4x4 matrix that transforms the projection of the stick figure to screen coordinates.
+     * @param {Matrix} worldCoordinatesToScreen A 4x4 matrix that transforms world coordinates to screen coordinates.
      */
-	draw(svg, start2d, projection, projectionToScreen) {
+    draw(svg, start2d, worldCoordinatesToScreen) {
 
-        this.screenPoint = Stick.calculateScreenPoint(this.end, projection, projectionToScreen);
+        this.screenPoint = Stick.calculateScreenPoint(this.end, worldCoordinatesToScreen);
+
         if (this.svgElement === null) {
 		    if (start2d !== null) {
                 if (this.polygon !== null) {
                     // Draw a polygon instead of a stick.
 
                     var locationOnStickFigure = this.instanceTransform.multiply(this.cumulativeTransform);
-                    var worldCoordinatesToScreen = projectionToScreen.multiply(projection);
                     var completeTransform = worldCoordinatesToScreen.multiply(locationOnStickFigure);
                     var applied = applyMatrixToArray(completeTransform, this.polygon);
-
                     var generatedPath = pointArrayToClosedSVGPath(applied);
 
 					//TODO?~ Consider using SVG polygon instead of path. But remember that that does not offer the options to make it curve.
@@ -98,7 +95,6 @@ class Stick {
             if (this.polygon !== null) {
 
 				var locationOnStickFigure = this.instanceTransform.multiply(this.cumulativeTransform);
-				var worldCoordinatesToScreen = projectionToScreen.multiply(projection);
 				var completeTransform = worldCoordinatesToScreen.multiply(locationOnStickFigure);
 				var applied = applyMatrixToArray(completeTransform, this.polygon);
 
@@ -113,10 +109,11 @@ class Stick {
         }
 
 		for (var i = 0; i < this.children.length; i++) {
-			this.children[i].draw(svg, this.screenPoint, projection, projectionToScreen);
+            this.children[i].draw(svg, this.screenPoint, worldCoordinatesToScreen);
 		}
 	}
 
+    //TODO!- Will be replaced by code in propagateMatrices.
 	propagate() {
 		this.calculateEndpoint();
 
@@ -228,7 +225,7 @@ function showWireframe() {
 	// First, we create an orthonormal projection matrix.
     // The world-coordinate's Y axis becomes the screen-coordinate's X axis.
 	// The world-coordinate's Z axis becomes the screen-coordinate's Y axis.
-	var projection = Matrix.create(
+	var projectOnYZPlane = Matrix.create(
         [
 		    [0.0, 1.0, 0.0, 0.0],
 		    [0.0, 0.0, 1.0, 0.0],
@@ -236,6 +233,18 @@ function showWireframe() {
 		    [0.0, 0.0, 0.0, 1.0]
 		]
 	);
+
+    // In this alternative matrix:
+    // The world-coordinate's X axis becomes the screen coordinate's X axis.
+    // The world-coordinate's Z axis becomes the screen coordinate's Y axis.
+    var projectOnXZPlane = Matrix.create(
+        [
+		    [1.0, 0.0, 0.0, 0.0],
+		    [0.0, 0.0, 1.0, 0.0],
+		    [0.0, 0.0, 0.0, 0.0],
+		    [0.0, 0.0, 0.0, 1.0]
+		]
+    );
 
 	// Second, convert these to screen coordinates.
 	// Note that on computer screens, a lower Y value is HIGHER on the screen. So we must invert the Y value.
@@ -252,7 +261,11 @@ function showWireframe() {
         ]
     );
 
-    var worldToScreen = projectionToScreen.multiply(projection);
+    var worldCoordinatesToScreenCoordinates = projectionToScreen.multiply(projectOnYZPlane);
+    //var worldCoordinatesToScreenCoordinates = projectionToScreen.multiply(projectOnXZPlane);
+
+    //TODO!+ Create a second worldToScreen matrix, that looks at our stick figure from the side... and puts it somewhere else on the screen.
+    // Maybe put the projection matrices in our AuxiliaryMatrixFunctions code: projectOnOxy, projectOnOxz, ProjectOnOyz .
 
 	// Define the stick figure.
 	// First, we define the center as a stick with length 0.
@@ -267,11 +280,11 @@ function showWireframe() {
 
     console.log("svg:");
     console.log(svg);
-	var head1 = new SvgStickView(svg, worldToScreen);
+	var head1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
     //var head2 = new SvgStickView(svg, worldToScreen);
     headCircle.addListener(head1);
     //headCircle.addListener(head2);
-    var back1 = new SvgStickView(svg, worldToScreen);
+    var back1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
     backStick.addListener(back1);
 
     // Add the left leg: from the hip to the toes.
@@ -323,15 +336,15 @@ function showWireframe() {
     centerStick.propagateMatrices(Matrix.I(4));
     centerStick.propagate();
 
-    centerStick.draw(svg, null, projection, projectionToScreen);
+    centerStick.draw(svg, null, worldCoordinatesToScreenCoordinates);
 
     function modifyRotationAroundXAxis(jointSlider, affectedJoint) {
             var radians = (Math.PI * jointSlider.value)/ 180.0;
             affectedJoint.rotation = $V([radians, 0.0, 0.0]);
 centerStick.propagateMatrices(Matrix.I(4));
             affectedJoint.propagate();
-            var start2d = Stick.calculateScreenPoint(affectedJoint.start, projection, projectionToScreen);
-            affectedJoint.draw(svg, start2d, projection, projectionToScreen);
+            var start2d = Stick.calculateScreenPoint(affectedJoint.start, worldCoordinatesToScreenCoordinates);
+            affectedJoint.draw(svg, start2d, worldCoordinatesToScreenCoordinates);
     }
 
     function modifyRotationAroundYAxis(jointSlider, affectedJoint) {
@@ -339,8 +352,8 @@ centerStick.propagateMatrices(Matrix.I(4));
             affectedJoint.rotation = $V([0.0, radians, 0.0]);
 centerStick.propagateMatrices(Matrix.I(4));
             affectedJoint.propagate();
-            var start2d = Stick.calculateScreenPoint(affectedJoint.start, projection, projectionToScreen);
-            affectedJoint.draw(svg, start2d, projection, projectionToScreen);
+			var start2d = Stick.calculateScreenPoint(affectedJoint.start, worldCoordinatesToScreenCoordinates);
+            affectedJoint.draw(svg, start2d, worldCoordinatesToScreenCoordinates);
     }
 
     var torsoLeftRight = document.getElementById("centerSideward");
