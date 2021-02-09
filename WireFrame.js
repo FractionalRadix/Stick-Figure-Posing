@@ -253,17 +253,14 @@ function showWireframe() {
 	// Then, we add the back to the center.
 	const backStick = new Stick($V([0.0, 0.0, 0.0]), 0.6, $V([0.1, 0.1, 0.1]), []); // centerStick.end , not a hard [0,0,0]
 	centerStick.children.push(backStick);
+
 	// Add a circle for the head.
     const headCircle = new Stick(backStick.end, 0.15, $V([0.0, 0.0, 0.0]), []);
     headCircle.polygon = generateRegularPolygon(10, 0.15);
     backStick.children.push(headCircle);
-
-    console.log("svg:");
-    console.log(svg);
 	var head1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
-    //var head2 = new SvgStickView(svg, worldToScreen);
     headCircle.addListener(head1);
-    //headCircle.addListener(head2);
+
     var back1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
     backStick.addListener(back1);
 
@@ -337,6 +334,19 @@ centerStick.propagateMatrices(Matrix.I(4));
 			var start2d = Stick.calculateScreenPoint(affectedJoint.start, worldCoordinatesToScreenCoordinates);
             affectedJoint.draw(svg, start2d, worldCoordinatesToScreenCoordinates);
     }
+
+    function modifyRotationAroundZAxis(jointSlider, affectedJoint) {
+            var radians = (Math.PI * jointSlider.value)/ 180.0;
+            var current = affectedJoint.rotation;
+            affectedJoint.rotation = $V([current.e(1), current.e(2), radians]);
+centerStick.propagateMatrices(Matrix.I(4));
+            affectedJoint.propagate();
+			var start2d = Stick.calculateScreenPoint(affectedJoint.start, worldCoordinatesToScreenCoordinates);
+            affectedJoint.draw(svg, start2d, worldCoordinatesToScreenCoordinates);
+    }
+
+    var spinningAroundAxis = document.getElementById("spinAroundAxis");
+    spinningAroundAxis.addEventListener('input', () => modifyRotationAroundZAxis(spinningAroundAxis, centerStick));
 
     var torsoLeftRight = document.getElementById("centerSideward");
     torsoLeftRight.addEventListener('input', () => modifyRotationAroundXAxis(torsoLeftRight, backStick));
