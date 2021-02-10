@@ -50,12 +50,12 @@ class Stick {
 	/**
      * Determine the screen position of a given point in world coordinates.
      * In other words, if (x,y,z) is a point in the stick figure's world, this function calculates where that point is on the screen.
-	 * @param {Matrix} worldCoordinatesToScreen Matrix to transform world coordinates to screen coordinates.
+	 * @param {Matrix} worldCoordinatesToScreenCoordinates Matrix to transform world coordinates to screen coordinates.
      * @return {Vector} Vector describing where the given point is on the user's screen. Note that only the first two parameters of this Vector are relevant: the X and the Y coordinate.
      */
-    static calculateScreenPoint(worldPoint, worldCoordinatesToScreen) {
+    static calculateScreenPoint(worldPoint, worldCoordinatesToScreenCoordinates) {
 		var worldPointVec4 = $V([worldPoint.e(1), worldPoint.e(2), worldPoint.e(3), 1]);
-        var screenPoint = worldCoordinatesToScreen.multiply(worldPointVec4);
+        var screenPoint = worldCoordinatesToScreenCoordinates.multiply(worldPointVec4);
 		return screenPoint;
 	}
     
@@ -68,11 +68,11 @@ class Stick {
      * Then, recursively draw all sticks attached to this stick's ending point.
      * @param {SVG object} svg The SVG element that is home to the stick figure.
      * @param {Vec4} start2d The starting point of the stick on the screen. Note that only its first 2 elements are relevant: the X-coordinate and the Y-coordinate.
-     * @param {Matrix} worldCoordinatesToScreen A 4x4 matrix that transforms world coordinates to screen coordinates.
+     * @param {Matrix} worldCoordinatesToScreenCoordinates A 4x4 matrix that transforms world coordinates to screen coordinates.
      */
-    draw(svg, start2d, worldCoordinatesToScreen) {
+    draw(svg, start2d, worldCoordinatesToScreenCoordinates) {
 
-        this.screenPoint = Stick.calculateScreenPoint(this.end, worldCoordinatesToScreen);
+        this.screenPoint = Stick.calculateScreenPoint(this.end, worldCoordinatesToScreenCoordinates);
 
         if (this.svgElement === null) {
 		    if (start2d !== null) {
@@ -80,12 +80,10 @@ class Stick {
                     // Draw a polygon instead of a stick.
 
                     var locationOnStickFigure = this.instanceTransform.multiply(this.cumulativeTransform);
-                    var completeTransform = worldCoordinatesToScreen.multiply(locationOnStickFigure);
+                    var completeTransform = worldCoordinatesToScreenCoordinates.multiply(locationOnStickFigure);
                     var applied = applyMatrixToArray(completeTransform, this.polygon);
-                    var generatedPath = pointArrayToClosedSVGPath(applied);
 
-					//TODO?~ Consider using SVG polygon instead of path. But remember that that does not offer the options to make it curve.
-                    this.svgElement = addPolygon(svg, generatedPath);
+                    this.svgElement = addPolygon(svg, applied);
                 } else {
                     // Draw a stick.
 			        this.svgElement = addLineSegment(svg, start2d, this.screenPoint);
@@ -95,7 +93,7 @@ class Stick {
             if (this.polygon !== null) {
 
 				var locationOnStickFigure = this.instanceTransform.multiply(this.cumulativeTransform);
-				var completeTransform = worldCoordinatesToScreen.multiply(locationOnStickFigure);
+				var completeTransform = worldCoordinatesToScreenCoordinates.multiply(locationOnStickFigure);
 				var applied = applyMatrixToArray(completeTransform, this.polygon);
 
 				var generatedPath = pointArrayToClosedSVGPath(applied);
@@ -109,7 +107,7 @@ class Stick {
         }
 
 		for (var i = 0; i < this.children.length; i++) {
-            this.children[i].draw(svg, this.screenPoint, worldCoordinatesToScreen);
+            this.children[i].draw(svg, this.screenPoint, worldCoordinatesToScreenCoordinates);
 		}
 	}
 
@@ -153,6 +151,14 @@ class Stick {
     }
 }
 
+//TODO!~ Creating a separate Observer for each Stick feels wrong.
+// Better to have a single Observing class that maintains the SVG elements.
+// It can iterate over the Stick Figure. It should then mimic its structure.
+// If an element is added or removed, the Observing, mimicking class can then add or remove a corresponding SVG element dynamically.
+// Note that we can still use class SvgStickView, just not as an observer.
+// A main class should hold the SvgStickView hierarchy, and be the one notified of changes.
+// That main class could also keep track of the instance of "svg", and pass it to the drawing code as a parameter.
+
 /**
  * An SvgStickView maintains the SVG representation of a Stick.
  * It is an Observer of a Stick. Whenever it is notified of a change to the Observed Stick, it redraws its SVG element.
@@ -192,9 +198,7 @@ class SvgStickView {
         } else {
             // It's a polygon. Create/update a polygon.
             if (this.svgElement === null) {
-                var generatedPath = pointArrayToClosedSVGPath(screenPoints);
-                //TODO?~ Consider using SVG polygon instead of path. But remember that that does not offer the options to make it curve.
-                this.svgElement = addPolygon(this.svg, generatedPath);
+                this.svgElement = addPolygon(this.svg, screenPoints);
 
                 //TODO!- FOR TESTING/DEBUGGING.
                 this.svgElement.style.stroke="green";    
@@ -250,68 +254,99 @@ function showWireframe() {
 	// Define the stick figure.
 	// First, we define the center as a stick with length 0.
 	const centerStick = new Stick($V([0.0, 0.0, 0.0]), 0.0, $V([0.0, 0.0,0.0]), []);
+    const centerStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
+
 	// Then, we add the back to the center.
 	const backStick = new Stick($V([0.0, 0.0, 0.0]), 0.6, $V([0.1, 0.1, 0.1]), []); // centerStick.end , not a hard [0,0,0]
 	centerStick.children.push(backStick);
-    /*
-    var back1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
-    backStick.addListener(back1);
-    */
+    var backStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
+    backStick.addListener(backStickView1);
 
 	// Add a circle for the head.
     const headCircle = new Stick(backStick.end, 0.15, $V([0.0, 0.0, 0.0]), []);
     headCircle.polygon = generateRegularPolygon(10, 0.15);
     backStick.children.push(headCircle);
-    /*
-	var head1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
-    headCircle.addListener(head1);
-    */
+	var headStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
+    headCircle.addListener(headStickView1);
 
 
     // Add the left leg: from the hip to the toes.
     // Add the stick going to the left hip.
     const leftHipStick = new Stick(centerStick.end,0.15,$V([-2.0, 0.0, 0.0]), []);
     centerStick.children.push(leftHipStick);
+    var leftHipStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
+    leftHipStick.addListener(leftHipStickView1);
+
     // Add the stick for  the left upper leg.
     const leftUpperLegStick = new Stick(leftHipStick.end, 0.40, $V([-0.25*Math.PI, 0.0, 0.0]),[]);
     leftHipStick.children.push(leftUpperLegStick);
+    var leftUpperLegStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
+    leftUpperLegStick.addListener(leftUpperLegStickView1);
 	// Add the stick for the left lower leg.
     const leftLowerLegStick = new Stick(leftUpperLegStick.end, 0.40, $V([0.0, 0.0, 0.0]), []);
     leftUpperLegStick.children.push(leftLowerLegStick);
+    var leftLowerLegStickView = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
+    leftLowerLegStick.addListener(leftLowerLegStickView);
     //TODO!+ Add the stick for the left foot.
 
     // Add the right leg: from the hip to the toes.
     // Add the stick going to the right hip.
-    const rightHipStick = new Stick(centerStick.end, 0.15,$V([+2.0, 0.0, 0.0]), []);
+    const rightHipStick = new Stick(centerStick.end, 0.15, $V([+2.0, 0.0, 0.0]), []);
     centerStick.children.push(rightHipStick);
+    var rightHipStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
+    rightHipStick.addListener(rightHipStickView1);
     // Add the stick for the right upper leg.
     const rightUpperLegStick = new Stick(rightHipStick.end, 0.40, $V([+0.25*Math.PI, 0.0, 0.0]),[]);
     rightHipStick.children.push(rightUpperLegStick);
+    var rightUpperLegStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
+    rightUpperLegStick.addListener(rightUpperLegStickView1);
     // Add the stick for the right lower leg.
     const rightLowerLegStick = new Stick(rightUpperLegStick.end, 0.40, $V([0.0, 0.0, 0.0]), []);
     rightUpperLegStick.children.push(rightLowerLegStick);
+    var rightLowerLegStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
+    rightLowerLegStick.addListener(rightLowerLegStickView1);
+    
     //TODO!+ Add the stick for the right foot.
 
     // Add the left arm: from the neck (!) to the wrist.
     // Add the stick going to the left shoulder.
     const leftShoulderStick = new Stick(backStick.end, 0.15, $V([-0.5 * Math.PI, 0.0, 0.0]), []);
     backStick.children.push(leftShoulderStick);
+    var leftShoulderStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
+    leftShoulderStick.addListener(leftShoulderStickView1);
     // Add the stick for the left upper arm.
     const leftUpperArmStick = new Stick(leftShoulderStick.end, 0.30, $V([-1.0, 0.0, 0.0]), []);
     leftShoulderStick.children.push(leftUpperArmStick);
+    var leftUpperArmStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
+    leftUpperArmStick.addListener(leftUpperArmStickView1);
+    // Add the stick for the left lower arm.
     const leftLowerArmStick = new Stick(leftUpperArmStick.end, 0.30, $V([-1.0, 0.0, 0.0]), []);
     leftUpperArmStick.children.push(leftLowerArmStick);
+    var leftLowerArmStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
+    leftLowerArmStick.addListener(leftLowerArmStickView1);
 	//TODO?+ Add a circle for the hand...
+    const leftHand = new Stick(leftLowerArmStick.end, 0.20, $V([0.0, 0.0, 0.0]), []);
+    leftHand.polygon = generateRegularPolygon(10, 0.05);
+    leftLowerArmStick.children.push(leftHand);
+    var leftHandView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
+    leftHand.addListener(leftHandView1);
 
     // Add the right arm: from the neck (!) to the wrist.
     // Add the stick going to the right shoulder.
     const rightShoulderStick = new Stick(backStick.end, 0.15, $V([0.5 * Math.PI, 0.0, 0.0]), []);
     backStick.children.push(rightShoulderStick);
+    var rightShoulderStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
+    rightShoulderStick.addListener(rightShoulderStickView1);
 	// Add the stick for the right upper arm.
     const rightUpperArmStick = new Stick(rightShoulderStick.end, 0.30, $V([+1.0, 0.0, 0.0]), []);
     rightShoulderStick.children.push(rightUpperArmStick);
+    var rightUpperArmStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
+    rightUpperArmStick.addListener(rightUpperArmStickView1);
+    // Add the stick for the right lower arm.
     const rightLowerArmStick = new Stick(rightUpperArmStick.end, 0.30, $V([+1.0, 0.0, 0.0]), []);
     rightUpperArmStick.children.push(rightLowerArmStick);
+    var rightLowerArmStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
+    rightLowerArmStick.addListener(rightLowerArmStickView1);
 	//TODO?+ Add a circle for the hand...
 
     centerStick.propagateMatrices(Matrix.I(4));
@@ -384,9 +419,10 @@ function addLineSegment(svg, v1, v2) {
     return lineSegment;
 }
 
-function addPolygon(svg, polygon) {
+function addPolygon(svg, points) {
 	var path = document.createElementNS("http://www.w3.org/2000/svg", 'path');
-	path.setAttribute("d", polygon);
+    const attributeValue = pointArrayToClosedSVGPath(points);
+	path.setAttribute("d", attributeValue);
 	path.style.stroke="black";
 	path.style.strokeWidth="1";
 	path.style.fill="none";
@@ -418,6 +454,8 @@ function generateRegularPolygon(n, radius) {
 
 /** Given an array of points, generate the SVG "path" string. 
  * The generated path visits all points in the array in order, starting and ending at the first.
+ * @param {[Vector]} vectoryArray An array of 3D vectors. Each vector should have at least 2 elements.
+ * @return {string} An SVG path string (the value for the "d" attribute in an SVG "path" element).
  */
 function pointArrayToClosedSVGPath(vectorArray) {
     var str = "";
@@ -428,8 +466,6 @@ function pointArrayToClosedSVGPath(vectorArray) {
           str += "M " + x + " " + y + " ";
         }
         else {
-          //TODO?+ See if we can use "C" (curve) or  "S" (smooth curve). 
-          // Or perhaps "Q", that one seems more likely to work for our case.
           str += "L " + x + " " + y + " ";
         }
     }
