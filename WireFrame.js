@@ -59,58 +59,6 @@ class Stick {
 		return screenPoint;
 	}
     
-
-    //TODO!- Should be done by observers.
-    /**
-     * Draw the line segment from the given starting point to the end of the current stick.
-     * If the stick (line segment) has not been added to the SVG yet, create it.
-     * If the stick has been added, simply change update its ending point.
-     * Then, recursively draw all sticks attached to this stick's ending point.
-     * @param {SVG object} svg The SVG element that is home to the stick figure.
-     * @param {Vec4} start2d The starting point of the stick on the screen. Note that only its first 2 elements are relevant: the X-coordinate and the Y-coordinate.
-     * @param {Matrix} worldCoordinatesToScreenCoordinates A 4x4 matrix that transforms world coordinates to screen coordinates.
-     */
-    draw(svg, start2d, worldCoordinatesToScreenCoordinates) {
-
-        this.screenPoint = Stick.calculateScreenPoint(this.end, worldCoordinatesToScreenCoordinates);
-
-        if (this.svgElement === null) {
-		    if (start2d !== null) {
-                if (this.polygon !== null) {
-                    // Draw a polygon instead of a stick.
-
-                    var locationOnStickFigure = this.instanceTransform.multiply(this.cumulativeTransform);
-                    var completeTransform = worldCoordinatesToScreenCoordinates.multiply(locationOnStickFigure);
-                    var applied = applyMatrixToArray(completeTransform, this.polygon);
-
-                    this.svgElement = addPolygon(svg, applied);
-                } else {
-                    // Draw a stick.
-			        this.svgElement = addLineSegment(svg, start2d, this.screenPoint);
-                }
-		    }
-        } else {
-            if (this.polygon !== null) {
-
-				var locationOnStickFigure = this.instanceTransform.multiply(this.cumulativeTransform);
-				var completeTransform = worldCoordinatesToScreenCoordinates.multiply(locationOnStickFigure);
-				var applied = applyMatrixToArray(completeTransform, this.polygon);
-
-				var generatedPath = pointArrayToClosedSVGPath(applied);
-				this.svgElement.setAttribute("d", generatedPath);
-            } else {
-                this.svgElement.setAttribute("x1", start2d.e(1));
-                this.svgElement.setAttribute("y1", start2d.e(2));
-                this.svgElement.setAttribute("x2", this.screenPoint.e(1));
-                this.svgElement.setAttribute("y2", this.screenPoint.e(2));
-            }
-        }
-
-		for (var i = 0; i < this.children.length; i++) {
-            this.children[i].draw(svg, this.screenPoint, worldCoordinatesToScreenCoordinates);
-		}
-	}
-
     //TODO!- Will be replaced by code in propagateMatrices.
 	propagate() {
 		this.calculateEndpoint();
@@ -346,16 +294,12 @@ function showWireframe() {
     centerStick.propagateMatrices(Matrix.I(4));
     centerStick.propagate();
 
-    //centerStick.draw(svg, null, worldCoordinatesToScreenCoordinates);
-
     function modifyRotationAroundXAxis(jointSlider, affectedJoint) {
             var radians = (Math.PI * jointSlider.value)/ 180.0;
             var current = affectedJoint.rotation;
             affectedJoint.rotation = $V([radians, current.e(2), current.e(3)]);
 centerStick.propagateMatrices(Matrix.I(4));
             affectedJoint.propagate();
-            //var start2d = Stick.calculateScreenPoint(affectedJoint.start, worldCoordinatesToScreenCoordinates);
-            //affectedJoint.draw(svg, start2d, worldCoordinatesToScreenCoordinates);
     }
 
     function modifyRotationAroundYAxis(jointSlider, affectedJoint) {
@@ -364,8 +308,6 @@ centerStick.propagateMatrices(Matrix.I(4));
             affectedJoint.rotation = $V([current.e(1), radians, current.e(3)]);
 centerStick.propagateMatrices(Matrix.I(4));
             affectedJoint.propagate();
-			//var start2d = Stick.calculateScreenPoint(affectedJoint.start, worldCoordinatesToScreenCoordinates);
-            //affectedJoint.draw(svg, start2d, worldCoordinatesToScreenCoordinates);
     }
 
     function modifyRotationAroundZAxis(jointSlider, affectedJoint) {
@@ -374,8 +316,6 @@ centerStick.propagateMatrices(Matrix.I(4));
             affectedJoint.rotation = $V([current.e(1), current.e(2), radians]);
 centerStick.propagateMatrices(Matrix.I(4));
             affectedJoint.propagate();
-			//var start2d = Stick.calculateScreenPoint(affectedJoint.start, worldCoordinatesToScreenCoordinates);
-            //affectedJoint.draw(svg, start2d, worldCoordinatesToScreenCoordinates);
     }
 
     var spinningAroundAxis = document.getElementById("spinAroundAxis");
@@ -400,69 +340,3 @@ centerStick.propagateMatrices(Matrix.I(4));
     rightElbow.addEventListener('input', () => modifyRotationAroundYAxis(rightElbow, rightLowerArmStick));
 }
 
-function addLineSegment(svg, v1, v2) {
-    var lineSegment = document.createElementNS("http://www.w3.org/2000/svg", 'line');
-    lineSegment.setAttribute("x1", v1.e(1)); 
-    lineSegment.setAttribute("y1", v1.e(2));
-    lineSegment.setAttribute("x2", v2.e(1));
-    lineSegment.setAttribute("y2", v2.e(2));
-    lineSegment.style.stroke="black";    
-    lineSegment.style.strokeWidth="1";
-    svg.appendChild(lineSegment);
-    console.log(lineSegment);
-    return lineSegment;
-}
-
-function addPolygon(svg, points) {
-	var path = document.createElementNS("http://www.w3.org/2000/svg", 'path');
-    const attributeValue = pointArrayToClosedSVGPath(points);
-	path.setAttribute("d", attributeValue);
-	path.style.stroke="black";
-	path.style.strokeWidth="1";
-	path.style.fill="none";
-	svg.appendChild(path);
-	console.log(path);
-    return path;
-}
-
-/**
- * Generates the points for a regular polygon, on the Oyz-plane, centered at the origin.
- * If the polygon has enough points, it will resemble a circle.
- * @param {int} n Number of points on the polygon; MUST be greater than 0.
- * @param {float} radius Radius of the polygon.
- * @return {[Vector]} An array of 3D vectors. Each point is a point on the polygon; the points are specified in order.
- */
-function generateRegularPolygon(n, radius) {
-	var res = [];
-	var delta = (2.0 * Math.PI) / n;
-	for (var i = 0; i < n; i++) {
-		var angle = i * delta;
-		var x = 0;
-		var y = radius * Math.cos(angle);
-		var z = radius * Math.sin(angle);
-		var P = $V([x,y,z,1]);
-		res.push(P);
-	}
-	return res;
-}
-
-/** Given an array of points, generate the SVG "path" string. 
- * The generated path visits all points in the array in order, starting and ending at the first.
- * @param {[Vector]} vectoryArray An array of 3D vectors. Each vector should have at least 2 elements.
- * @return {string} An SVG path string (the value for the "d" attribute in an SVG "path" element).
- */
-function pointArrayToClosedSVGPath(vectorArray) {
-    var str = "";
-    for (var i = 0; i < vectorArray.length; i++) {
-        var x = vectorArray[i].e(1);
-        var y = vectorArray[i].e(2);
-        if (i === 0) {
-          str += "M " + x + " " + y + " ";
-        }
-        else {
-          str += "L " + x + " " + y + " ";
-        }
-    }
-    str += "Z";
-    return str;
-}
