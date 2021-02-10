@@ -28,12 +28,6 @@ class Stick {
         this.listeners.forEach(x => x.update(data));
     }
 
-    //TODO!- Replaced by code in propagateMatrices and Observers.
-    calculateEndpoint() {
-        var P = Vector.create($V([0.0, 0.0, 0.0, 1.0]));
-        this.end = this.cumulativeTransform.multiply(P);
-    }
-
     calculateMatrix() {
 
 		// Create a translation matrix, that translates a point over "length" meters.
@@ -58,17 +52,6 @@ class Stick {
         var screenPoint = worldCoordinatesToScreenCoordinates.multiply(worldPointVec4);
 		return screenPoint;
 	}
-    
-    //TODO!- Will be replaced by code in propagateMatrices.
-	propagate() {
-		this.calculateEndpoint();
-
-		for (var i = 0; i < this.children.length; i++) {
-			var child = this.children[i];
-			child.start = this.end;
-			child.propagate();
-		}
-	}
 
     propagateMatrices(transform) {
         this.calculateMatrix(); // Determines this.instanceTransform.
@@ -76,8 +59,7 @@ class Stick {
         this.cumulativeTransform = transform.multiply(this.instanceTransform);
         this.end = this.cumulativeTransform.multiply($V([0.0, 0.0, 0.0, 1.0]));
 
-		//TODO?~ For use with the new listener mechanism. Should eventually replace the current "propagate" and "draw".
-        //TODO!+ Need a way for the Observers to distinghuis between a stick and a polygon.
+        //TODO!+ Need a way for the Observers to distinguish between a stick and a polygon.
 		if (this.polygon === null) {
 			// Calculate the starting point and the ending point of the Stick.
 			// Then send that information to the Observers.
@@ -91,7 +73,6 @@ class Stick {
 			var transformedPolygon = applyMatrixToArray(this.cumulativeTransform, this.polygon);
 			this.notifyObservers(transformedPolygon);
 		}
-        //End of the code for the new listener mechanism.
 
         for (var i = 0; i < this.children.length; i++) {
             this.children[i].propagateMatrices(this.cumulativeTransform);
@@ -292,14 +273,14 @@ function showWireframe() {
     rightHand.addListener(rightHandView1);
 
     centerStick.propagateMatrices(Matrix.I(4));
-    centerStick.propagate();
+    //centerStick.propagate();
 
     function modifyRotationAroundXAxis(jointSlider, affectedJoint) {
             var radians = (Math.PI * jointSlider.value)/ 180.0;
             var current = affectedJoint.rotation;
             affectedJoint.rotation = $V([radians, current.e(2), current.e(3)]);
 centerStick.propagateMatrices(Matrix.I(4));
-            affectedJoint.propagate();
+            //affectedJoint.propagate();
     }
 
     function modifyRotationAroundYAxis(jointSlider, affectedJoint) {
@@ -307,7 +288,7 @@ centerStick.propagateMatrices(Matrix.I(4));
             var current = affectedJoint.rotation;
             affectedJoint.rotation = $V([current.e(1), radians, current.e(3)]);
 centerStick.propagateMatrices(Matrix.I(4));
-            affectedJoint.propagate();
+            //affectedJoint.propagate();
     }
 
     function modifyRotationAroundZAxis(jointSlider, affectedJoint) {
@@ -315,7 +296,7 @@ centerStick.propagateMatrices(Matrix.I(4));
             var current = affectedJoint.rotation;
             affectedJoint.rotation = $V([current.e(1), current.e(2), radians]);
 centerStick.propagateMatrices(Matrix.I(4));
-            affectedJoint.propagate();
+            //affectedJoint.propagate();
     }
 
     var spinningAroundAxis = document.getElementById("spinAroundAxis");
