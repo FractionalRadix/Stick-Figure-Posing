@@ -184,11 +184,6 @@ class SvgStickView {
             // It's a stick. Create/update a line segment.
             if (this.svgElement === null) {
                 this.svgElement = addLineSegment(this.svg, screenPoints[0], screenPoints[1]);
-
-                //TODO!- FOR TESTING/DEBUGGING.
-                this.svgElement.style.stroke="green";    
-                this.svgElement.style.strokeWidth="4";
-                // END OF TESTING/DEBUGGING CODE.
             } else {
                 this.svgElement.setAttribute("x1", screenPoints[0].e(1));
                 this.svgElement.setAttribute("y1", screenPoints[0].e(2));
@@ -199,12 +194,6 @@ class SvgStickView {
             // It's a polygon. Create/update a polygon.
             if (this.svgElement === null) {
                 this.svgElement = addPolygon(this.svg, screenPoints);
-
-                //TODO!- FOR TESTING/DEBUGGING.
-                this.svgElement.style.stroke="green";    
-                this.svgElement.style.strokeWidth="4";
-                // END OF TESTING/DEBUGGING CODE.
-
             } else {
                 var generatedPath = pointArrayToClosedSVGPath(screenPoints);
                 this.svgElement.setAttribute("d", generatedPath);
@@ -263,7 +252,7 @@ function showWireframe() {
     backStick.addListener(backStickView1);
 
 	// Add a circle for the head.
-    const headCircle = new Stick(backStick.end, 0.15, $V([0.0, 0.0, 0.0]), []);
+    const headCircle = new Stick(backStick.end, 0.30, $V([0.0, 0.0, 0.0]), []);
     headCircle.polygon = generateRegularPolygon(10, 0.15);
     backStick.children.push(headCircle);
 	var headStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
@@ -324,8 +313,8 @@ function showWireframe() {
     leftUpperArmStick.children.push(leftLowerArmStick);
     var leftLowerArmStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
     leftLowerArmStick.addListener(leftLowerArmStickView1);
-	//TODO?+ Add a circle for the hand...
-    const leftHand = new Stick(leftLowerArmStick.end, 0.20, $V([0.0, 0.0, 0.0]), []);
+	// Add a circle for the hand.
+    const leftHand = new Stick(leftLowerArmStick.end, 0.0, $V([0.0, 0.0, 0.0]), []);
     leftHand.polygon = generateRegularPolygon(10, 0.05);
     leftLowerArmStick.children.push(leftHand);
     var leftHandView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
@@ -347,12 +336,17 @@ function showWireframe() {
     rightUpperArmStick.children.push(rightLowerArmStick);
     var rightLowerArmStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
     rightLowerArmStick.addListener(rightLowerArmStickView1);
-	//TODO?+ Add a circle for the hand...
+	// Add a circle for the hand.
+    var rightHand = new Stick(rightLowerArmStick.end, 0.0, $V([0.0, 0.0, 0.0]), []);
+    rightHand.polygon = generateRegularPolygon(10, 0.05);
+    rightLowerArmStick.children.push(rightHand);
+    var rightHandView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
+    rightHand.addListener(rightHandView1);
 
     centerStick.propagateMatrices(Matrix.I(4));
     centerStick.propagate();
 
-    centerStick.draw(svg, null, worldCoordinatesToScreenCoordinates);
+    //centerStick.draw(svg, null, worldCoordinatesToScreenCoordinates);
 
     function modifyRotationAroundXAxis(jointSlider, affectedJoint) {
             var radians = (Math.PI * jointSlider.value)/ 180.0;
@@ -360,8 +354,8 @@ function showWireframe() {
             affectedJoint.rotation = $V([radians, current.e(2), current.e(3)]);
 centerStick.propagateMatrices(Matrix.I(4));
             affectedJoint.propagate();
-            var start2d = Stick.calculateScreenPoint(affectedJoint.start, worldCoordinatesToScreenCoordinates);
-            affectedJoint.draw(svg, start2d, worldCoordinatesToScreenCoordinates);
+            //var start2d = Stick.calculateScreenPoint(affectedJoint.start, worldCoordinatesToScreenCoordinates);
+            //affectedJoint.draw(svg, start2d, worldCoordinatesToScreenCoordinates);
     }
 
     function modifyRotationAroundYAxis(jointSlider, affectedJoint) {
@@ -370,8 +364,8 @@ centerStick.propagateMatrices(Matrix.I(4));
             affectedJoint.rotation = $V([current.e(1), radians, current.e(3)]);
 centerStick.propagateMatrices(Matrix.I(4));
             affectedJoint.propagate();
-			var start2d = Stick.calculateScreenPoint(affectedJoint.start, worldCoordinatesToScreenCoordinates);
-            affectedJoint.draw(svg, start2d, worldCoordinatesToScreenCoordinates);
+			//var start2d = Stick.calculateScreenPoint(affectedJoint.start, worldCoordinatesToScreenCoordinates);
+            //affectedJoint.draw(svg, start2d, worldCoordinatesToScreenCoordinates);
     }
 
     function modifyRotationAroundZAxis(jointSlider, affectedJoint) {
@@ -380,8 +374,8 @@ centerStick.propagateMatrices(Matrix.I(4));
             affectedJoint.rotation = $V([current.e(1), current.e(2), radians]);
 centerStick.propagateMatrices(Matrix.I(4));
             affectedJoint.propagate();
-			var start2d = Stick.calculateScreenPoint(affectedJoint.start, worldCoordinatesToScreenCoordinates);
-            affectedJoint.draw(svg, start2d, worldCoordinatesToScreenCoordinates);
+			//var start2d = Stick.calculateScreenPoint(affectedJoint.start, worldCoordinatesToScreenCoordinates);
+            //affectedJoint.draw(svg, start2d, worldCoordinatesToScreenCoordinates);
     }
 
     var spinningAroundAxis = document.getElementById("spinAroundAxis");
