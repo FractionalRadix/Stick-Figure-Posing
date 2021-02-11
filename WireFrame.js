@@ -13,20 +13,7 @@ class Stick {
 		this.screenPoint;           // Cache for the position of this point on the screen.
         this.svgElement = null;     // Reference to the SVG element that represents this particular Stick instance.
         this.polygon = null;        // Dirty hack: if polygon===null, we draw a Stick. Otherwise, we draw the polygon specified in this variable. It is then an Array of Vector ([Vector]).
-        this.listeners = [];        // UNDER CONSTRUCTION: to separate "Model" (Stick) and "View". Stick will only contain the world positions, "Views" will do the SVG drawing. 
-                                    //   This will allow us to show the same Stick figure simultaneously from different angles.
 	}
-
-    addListener(listener) {
-        this.listeners.push(listener);
-    }
-
-    //TODO!+ Add a method for removing a listener
-    //  Could just remove from the array, or redefine the array using a filter.
-
-    notifyObservers(data) {
-        this.listeners.forEach(view => view.update(data));
-    }
 
     calculateMatrix() {
 
@@ -66,12 +53,10 @@ class Stick {
             //  You MAY want to set the "end" as the "start" for each child node, that saves calculation time.
             //  Note that you still need to set the very first "start" element.
 
-			this.notifyObservers([this.start,this.end]); //TODO?~ 
 		} else {
 			// Calculate the points of the transformed Polygon.
 			// Then send that information to the Observers.
 			var transformedPolygon = applyMatrixToArray(this.cumulativeTransform, this.polygon);
-			this.notifyObservers(transformedPolygon);
 		}
 
         for (var i = 0; i < this.children.length; i++) {
@@ -103,6 +88,8 @@ class SvgStickViewContainer {
         this.rootStick = rootStick; // Will be used in the future, as a starting point for propagating changes.
     }
 
+    //TODO!+ Add ONE listener - for the SvgStickViewContainer. (Already removed them from the Stick class).
+
     /**
      * Accepts a Stick (the root of a Stick Figure), and recursively builds a View for it.
      * @param {Stick} stickFigure A Stick instance.
@@ -110,16 +97,35 @@ class SvgStickViewContainer {
     build(stick) {
         var view = new SvgStickView(this.svg, this.worldToScreen);
         view.children = [];
-        stick.addListener(view); //TODO!-  This should be delegated to the owning class.
         for (var i = 0; i < stick.children.length; i++) {
             var childView = this.build(stick.children[i]);
             view.children.push(childView);
         }
-        return this.view;
+        return view;
     }
 
-    //TODO!+ Add a propagate method - a method that, given a change in the base Stick figure, propagates these changes to the view.
-    // Should we keep the reference to the original Stick figure...?
+    // Propagate method - a method that, given a change in the base Stick figure, propagates these changes to the view.
+    propagate( ) {
+        console.log(this.rootStick);
+        console.log(this.rootView);
+        this.do_propagate(this.rootStick, this.rootView);
+    }
+    do_propagate(stick, view) {
+        if (stick.polygon === null ) {
+            view.update( [stick.start, stick.end] );
+        } else {
+			var transformedPolygon = applyMatrixToArray(stick.cumulativeTransform, stick.polygon);
+			view.update(transformedPolygon);
+        }
+
+        //TODO!+ Handle the situation that stick.children.length != view.children.length .
+        //  In that case, the model (stick) has had sticks added/removed, and we need to deal with the change!
+        for (var i = 0; i < stick.children.length; i++) {
+            var currentChildStick = stick.children[i];
+            var currentChildView = view.children[i];
+            this.do_propagate(currentChildStick, currentChildView);
+        }
+    }
 }
 
 /**
@@ -187,6 +193,7 @@ function showWireframe() {
 	// We assume a screen of 400 x 400, and want to put our (0,0) in world coordinates at (200,200) in screen coordinates.
 	// Next, let's assume that 1m in world coordinates should be 50 units in screen coordinates.
 	// That results in scale factors 50 and -50 for the X- and Y-scaling. And translation factors 200 and 200 for the X- and Y-translation.
+    // We then add a second view of the same stick figure, from a different projection plane, and 100 pixels to the right.
 	//TODO?~ Should we do this part using 2D coordinates? If it remains a separate step, it'll save time. If we put all matrices together... it'll be faster to make it a single step.
     var projectionToScreen1 = Matrix.create(
         [
@@ -286,12 +293,16 @@ function showWireframe() {
     view1 = new SvgStickViewContainer(svg, worldCoordinatesToScreenCoordinates1, centerStick);
     view2 = new SvgStickViewContainer(svg, worldCoordinatesToScreenCoordinates2, centerStick);
     centerStick.propagateMatrices(Matrix.I(4));
+    view1.propagate();
+    view2.propagate();
 
     function modifyRotationAroundXAxis(jointSlider, affectedJoint) {
             var radians = (Math.PI * jointSlider.value)/ 180.0;
             var current = affectedJoint.rotation;
             affectedJoint.rotation = $V([radians, current.e(2), current.e(3)]);
 centerStick.propagateMatrices(Matrix.I(4));
+view1.propagate();
+view2.propagate();
     }
 
     function modifyRotationAroundYAxis(jointSlider, affectedJoint) {
@@ -299,6 +310,8 @@ centerStick.propagateMatrices(Matrix.I(4));
             var current = affectedJoint.rotation;
             affectedJoint.rotation = $V([current.e(1), radians, current.e(3)]);
 centerStick.propagateMatrices(Matrix.I(4));
+view1.propagate();
+view2.propagate();
     }
 
     function modifyRotationAroundZAxis(jointSlider, affectedJoint) {
@@ -306,6 +319,8 @@ centerStick.propagateMatrices(Matrix.I(4));
             var current = affectedJoint.rotation;
             affectedJoint.rotation = $V([current.e(1), current.e(2), radians]);
 centerStick.propagateMatrices(Matrix.I(4));
+view1.propagate();
+view2.propagate();
     }
 
     var spinningAroundAxis = document.getElementById("spinAroundAxis");
