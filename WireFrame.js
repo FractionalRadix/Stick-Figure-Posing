@@ -25,7 +25,7 @@ class Stick {
     //  Could just remove from the array, or redefine the array using a filter.
 
     notifyObservers(data) {
-        this.listeners.forEach(x => x.update(data));
+        this.listeners.forEach(view => view.update(data));
     }
 
     calculateMatrix() {
@@ -87,6 +87,40 @@ class Stick {
 // Note that we can still use class SvgStickView, just not as an observer.
 // A main class should hold the SvgStickView hierarchy, and be the one notified of changes.
 // That main class could also keep track of the instance of "svg", and pass it to the drawing code as a parameter.
+// So... we start on a StickFigureViewBuilder
+class SvgStickViewContainer {
+    /**
+     * Create a view of a Stick Figure.
+     * Given the SVG element, a transformation Matrix, and a root stick, this class creates a view for the stick and its descendant nodes.
+     * @param {Object} svg The SVG element in which the stick figure should be displayed.
+     * @param {Matrix} worldToScreen A transformation matrix that transforms the stick figure's coordinates to screen coordinates.
+     * @param {root} The root Stick of the Stick figure; the first Stick, to which all the other ones are directly or indirectly attached.
+     */
+    constructor(svg, worldToScreen, rootStick) {
+        this.svg = svg;
+        this.worldToScreen = worldToScreen;
+        this.rootView = this.build(rootStick);     
+        this.rootStick = rootStick; // Will be used in the future, as a starting point for propagating changes.
+    }
+
+    /**
+     * Accepts a Stick (the root of a Stick Figure), and recursively builds a View for it.
+     * @param {Stick} stickFigure A Stick instance.
+     */
+    build(stick) {
+        var view = new SvgStickView(this.svg, this.worldToScreen);
+        view.children = [];
+        stick.addListener(view); //TODO!-  This should be delegated to the owning class.
+        for (var i = 0; i < stick.children.length; i++) {
+            var childView = this.build(stick.children[i]);
+            view.children.push(childView);
+        }
+        return this.view;
+    }
+
+    //TODO!+ Add a propagate method - a method that, given a change in the base Stick figure, propagates these changes to the view.
+    // Should we keep the reference to the original Stick figure...?
+}
 
 /**
  * An SvgStickView maintains the SVG representation of a Stick.
@@ -146,7 +180,7 @@ function showWireframe() {
 
 	// First, we create an orthonormal projection matrix.
 	var projectOnYZPlane = ProjectionMatrixYZPlane();
-    //var projectOnXZPlane = ProjectionMatrixXZPlane();
+    var projectOnXZPlane = ProjectionMatrixXZPlane();
 
 	// Second, convert these to screen coordinates.
 	// Note that on computer screens, a lower Y value is HIGHER on the screen. So we must invert the Y value.
@@ -154,7 +188,7 @@ function showWireframe() {
 	// Next, let's assume that 1m in world coordinates should be 50 units in screen coordinates.
 	// That results in scale factors 50 and -50 for the X- and Y-scaling. And translation factors 200 and 200 for the X- and Y-translation.
 	//TODO?~ Should we do this part using 2D coordinates? If it remains a separate step, it'll save time. If we put all matrices together... it'll be faster to make it a single step.
-    var projectionToScreen = Matrix.create(
+    var projectionToScreen1 = Matrix.create(
         [
             [+50.0,   0.0, 0.0, +200.0],
             [  0.0, -50.0, 0.0, +200.0],
@@ -163,8 +197,17 @@ function showWireframe() {
         ]
     );
 
-    var worldCoordinatesToScreenCoordinates = projectionToScreen.multiply(projectOnYZPlane);
-    //var worldCoordinatesToScreenCoordinates = projectionToScreen.multiply(projectOnXZPlane);
+    var projectionToScreen2 = Matrix.create(
+        [
+            [+50.0,   0.0, 0.0, +300.0],  // Next view of the same stick figure is 100 pixels further to the right of the screen.
+            [  0.0, -50.0, 0.0, +200.0],
+            [  0.0,   0.0, 0.0,    0.0],
+            [  0.0,   0.0, 0.0,    1.0]
+        ]
+    );
+
+    var worldCoordinatesToScreenCoordinates1 = projectionToScreen1.multiply(projectOnYZPlane);
+    var worldCoordinatesToScreenCoordinates2 = projectionToScreen2.multiply(projectOnXZPlane);
 
     //TODO!+ Create a second worldToScreen matrix, that looks at our stick figure from the side... and puts it somewhere else on the screen.
     // Maybe put the projection matrices in our AuxiliaryMatrixFunctions code: projectOnOxy, projectOnOxz, ProjectOnOyz .
@@ -172,19 +215,19 @@ function showWireframe() {
 	// Define the stick figure.
 	// First, we define the center as a stick with length 0.
 	const centerStick = new Stick($V([0.0, 0.0, 0.0]), 0.0, $V([0.0, 0.0,0.0]), []);
-    const centerStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
+    const centerStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates1);
 
 	// Then, we add the back to the center.
 	const backStick = new Stick($V([0.0, 0.0, 0.0]), 0.6, $V([0.1, 0.1, 0.1]), []); // centerStick.end , not a hard [0,0,0]
 	centerStick.children.push(backStick);
-    var backStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
+    var backStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates1);
     backStick.addListener(backStickView1);
 
 	// Add a circle for the head.
     const headCircle = new Stick(backStick.end, 0.30, $V([0.0, 0.0, 0.0]), []);
     headCircle.polygon = generateRegularPolygon(10, 0.15);
     backStick.children.push(headCircle);
-	var headStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
+	var headStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates1);
     headCircle.addListener(headStickView1);
 
 
@@ -192,18 +235,18 @@ function showWireframe() {
     // Add the stick going to the left hip.
     const leftHipStick = new Stick(centerStick.end,0.15,$V([-2.0, 0.0, 0.0]), []);
     centerStick.children.push(leftHipStick);
-    var leftHipStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
+    var leftHipStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates1);
     leftHipStick.addListener(leftHipStickView1);
 
     // Add the stick for  the left upper leg.
     const leftUpperLegStick = new Stick(leftHipStick.end, 0.40, $V([-0.25*Math.PI, 0.0, 0.0]),[]);
     leftHipStick.children.push(leftUpperLegStick);
-    var leftUpperLegStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
+    var leftUpperLegStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates1);
     leftUpperLegStick.addListener(leftUpperLegStickView1);
 	// Add the stick for the left lower leg.
     const leftLowerLegStick = new Stick(leftUpperLegStick.end, 0.40, $V([0.0, 0.0, 0.0]), []);
     leftUpperLegStick.children.push(leftLowerLegStick);
-    var leftLowerLegStickView = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
+    var leftLowerLegStickView = new SvgStickView(svg, worldCoordinatesToScreenCoordinates1);
     leftLowerLegStick.addListener(leftLowerLegStickView);
     //TODO!+ Add the stick for the left foot.
 
@@ -211,17 +254,17 @@ function showWireframe() {
     // Add the stick going to the right hip.
     const rightHipStick = new Stick(centerStick.end, 0.15, $V([+2.0, 0.0, 0.0]), []);
     centerStick.children.push(rightHipStick);
-    var rightHipStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
+    var rightHipStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates1);
     rightHipStick.addListener(rightHipStickView1);
     // Add the stick for the right upper leg.
     const rightUpperLegStick = new Stick(rightHipStick.end, 0.40, $V([+0.25*Math.PI, 0.0, 0.0]),[]);
     rightHipStick.children.push(rightUpperLegStick);
-    var rightUpperLegStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
+    var rightUpperLegStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates1);
     rightUpperLegStick.addListener(rightUpperLegStickView1);
     // Add the stick for the right lower leg.
     const rightLowerLegStick = new Stick(rightUpperLegStick.end, 0.40, $V([0.0, 0.0, 0.0]), []);
     rightUpperLegStick.children.push(rightLowerLegStick);
-    var rightLowerLegStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
+    var rightLowerLegStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates1);
     rightLowerLegStick.addListener(rightLowerLegStickView1);
     
     //TODO!+ Add the stick for the right foot.
@@ -230,57 +273,57 @@ function showWireframe() {
     // Add the stick going to the left shoulder.
     const leftShoulderStick = new Stick(backStick.end, 0.15, $V([-0.5 * Math.PI, 0.0, 0.0]), []);
     backStick.children.push(leftShoulderStick);
-    var leftShoulderStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
+    var leftShoulderStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates1);
     leftShoulderStick.addListener(leftShoulderStickView1);
     // Add the stick for the left upper arm.
     const leftUpperArmStick = new Stick(leftShoulderStick.end, 0.30, $V([-1.0, 0.0, 0.0]), []);
     leftShoulderStick.children.push(leftUpperArmStick);
-    var leftUpperArmStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
+    var leftUpperArmStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates1);
     leftUpperArmStick.addListener(leftUpperArmStickView1);
     // Add the stick for the left lower arm.
     const leftLowerArmStick = new Stick(leftUpperArmStick.end, 0.30, $V([-1.0, 0.0, 0.0]), []);
     leftUpperArmStick.children.push(leftLowerArmStick);
-    var leftLowerArmStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
+    var leftLowerArmStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates1);
     leftLowerArmStick.addListener(leftLowerArmStickView1);
 	// Add a circle for the hand.
     const leftHand = new Stick(leftLowerArmStick.end, 0.0, $V([0.0, 0.0, 0.0]), []);
     leftHand.polygon = generateRegularPolygon(10, 0.05);
     leftLowerArmStick.children.push(leftHand);
-    var leftHandView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
+    var leftHandView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates1);
     leftHand.addListener(leftHandView1);
 
     // Add the right arm: from the neck (!) to the wrist.
     // Add the stick going to the right shoulder.
     const rightShoulderStick = new Stick(backStick.end, 0.15, $V([0.5 * Math.PI, 0.0, 0.0]), []);
     backStick.children.push(rightShoulderStick);
-    var rightShoulderStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
+    var rightShoulderStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates1);
     rightShoulderStick.addListener(rightShoulderStickView1);
 	// Add the stick for the right upper arm.
     const rightUpperArmStick = new Stick(rightShoulderStick.end, 0.30, $V([+1.0, 0.0, 0.0]), []);
     rightShoulderStick.children.push(rightUpperArmStick);
-    var rightUpperArmStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
+    var rightUpperArmStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates1);
     rightUpperArmStick.addListener(rightUpperArmStickView1);
     // Add the stick for the right lower arm.
     const rightLowerArmStick = new Stick(rightUpperArmStick.end, 0.30, $V([+1.0, 0.0, 0.0]), []);
     rightUpperArmStick.children.push(rightLowerArmStick);
-    var rightLowerArmStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
+    var rightLowerArmStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates1);
     rightLowerArmStick.addListener(rightLowerArmStickView1);
 	// Add a circle for the hand.
     var rightHand = new Stick(rightLowerArmStick.end, 0.0, $V([0.0, 0.0, 0.0]), []);
     rightHand.polygon = generateRegularPolygon(10, 0.05);
     rightLowerArmStick.children.push(rightHand);
-    var rightHandView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates);
+    var rightHandView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates1);
     rightHand.addListener(rightHandView1);
 
     centerStick.propagateMatrices(Matrix.I(4));
-    //centerStick.propagate();
+
+    view2 = new SvgStickViewContainer(svg, worldCoordinatesToScreenCoordinates2, centerStick);
 
     function modifyRotationAroundXAxis(jointSlider, affectedJoint) {
             var radians = (Math.PI * jointSlider.value)/ 180.0;
             var current = affectedJoint.rotation;
             affectedJoint.rotation = $V([radians, current.e(2), current.e(3)]);
 centerStick.propagateMatrices(Matrix.I(4));
-            //affectedJoint.propagate();
     }
 
     function modifyRotationAroundYAxis(jointSlider, affectedJoint) {
@@ -288,7 +331,6 @@ centerStick.propagateMatrices(Matrix.I(4));
             var current = affectedJoint.rotation;
             affectedJoint.rotation = $V([current.e(1), radians, current.e(3)]);
 centerStick.propagateMatrices(Matrix.I(4));
-            //affectedJoint.propagate();
     }
 
     function modifyRotationAroundZAxis(jointSlider, affectedJoint) {
@@ -296,7 +338,6 @@ centerStick.propagateMatrices(Matrix.I(4));
             var current = affectedJoint.rotation;
             affectedJoint.rotation = $V([current.e(1), current.e(2), radians]);
 centerStick.propagateMatrices(Matrix.I(4));
-            //affectedJoint.propagate();
     }
 
     var spinningAroundAxis = document.getElementById("spinAroundAxis");
