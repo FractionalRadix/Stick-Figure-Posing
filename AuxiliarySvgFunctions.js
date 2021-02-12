@@ -25,14 +25,14 @@ function addLineSegment(svg, v1, v2) {
  * @return {Object} An SVG path element that describes a closed path through all given points, in order.
  */
 function addPolygon(svg, points) {
-	var path = document.createElementNS("http://www.w3.org/2000/svg", 'path');
+    var path = document.createElementNS("http://www.w3.org/2000/svg", 'path');
     const attributeValue = pointArrayToClosedSVGPath(points);
-	path.setAttribute("d", attributeValue);
-	path.style.stroke="black";
-	path.style.strokeWidth="1";
-	path.style.fill="none";
-	svg.appendChild(path);
-	console.log(path);
+    path.setAttribute("d", attributeValue);
+    path.style.stroke="black";
+    path.style.strokeWidth="1";
+    path.style.fill="none";
+    svg.appendChild(path);
+    console.log(path);
     return path;
 }
 
@@ -44,17 +44,17 @@ function addPolygon(svg, points) {
  * @return {[Vector]} An array of 3D vectors. Each point is a point on the polygon; the points are specified in order.
  */
 function generateRegularPolygon(n, radius) {
-	var res = [];
-	var delta = (2.0 * Math.PI) / n;
-	for (var i = 0; i < n; i++) {
-		var angle = i * delta;
-		var x = 0;
-		var y = radius * Math.cos(angle);
-		var z = radius * Math.sin(angle);
-		var P = $V([x,y,z,1]);
-		res.push(P);
-	}
-	return res;
+    var res = [];
+    var delta = (2.0 * Math.PI) / n;
+    for (var i = 0; i < n; i++) {
+        var angle = i * delta;
+        var x = 0;
+        var y = radius * Math.cos(angle);
+        var z = radius * Math.sin(angle);
+        var P = $V([x,y,z,1]);
+        res.push(P);
+    }
+    return res;
 }
 
 /** 

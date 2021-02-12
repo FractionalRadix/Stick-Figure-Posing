@@ -1,44 +1,42 @@
 // The Stick class defines a Stick, AND the list of other sticks connected to it.
 class Stick {
-	constructor(start, length, rotation,children) {
-		this.start = start;			// Starting point of this Stick instance, in world coordinates. Vector of 3 float values.
-		this.length = length;		// Length of the stick in world coordinates. Float.
-		this.rotation = rotation;	// Rotation of this Stick instance, applied from the point "start". Vector of 3 float values.
-		this.children = [];			// List/Array of Stick instances. (Yes, it's recursive - our Stick figures are trees of Stick instances).
-		this.end;                   // Cache for the endpoint of this Stick instance, in world coordinates.
+    constructor(start, length, rotation,children) {
+        this.start = start;			// Starting point of this Stick instance, in world coordinates. Vector of 3 float values.
+        this.length = length;		// Length of the stick in world coordinates. Float.
+        this.rotation = rotation;	// Rotation of this Stick instance, applied from the point "start". Vector of 3 float values.
+        this.children = [];			// List/Array of Stick instances. (Yes, it's recursive - our Stick figures are trees of Stick instances).
+        this.end;					// Cache for the endpoint of this Stick instance, in world coordinates.
 
-        this.instanceTransform;     // 4 x 4 transformation matrix that applies the rotation and translation for this specific Stick instance.
-        this.cumulativeTransform;   // 4 x 4 transformation matrix that applies all the cumulative transformations of the parent Sticks.
+        this.instanceTransform;		// 4 x 4 transformation matrix that applies the rotation and translation for this specific Stick instance.
+        this.cumulativeTransform;	// 4 x 4 transformation matrix that applies all the cumulative transformations of the parent Sticks.
 
-		this.screenPoint;           // Cache for the position of this point on the screen.
-        this.svgElement = null;     // Reference to the SVG element that represents this particular Stick instance.
-        this.polygon = null;        // Dirty hack: if polygon===null, we draw a Stick. Otherwise, we draw the polygon specified in this variable. It is then an Array of Vector ([Vector]).
-	}
+        this.polygon = null;		// Dirty hack: if polygon===null, we draw a Stick. Otherwise, we draw the polygon specified in this variable. It is then an Array of Vector ([Vector]).
+    }
 
     calculateMatrix() {
 
-		// Create a translation matrix, that translates a point over "length" meters.
+        // Create a translation matrix, that translates a point over "length" meters.
         var Tz = TranslationMatrix($V([0.0, 0.0, this.length]));
 
-		// Create rotation matrices for the specified rotation.
-		var Rx = create4x4TransformationMatrix(Matrix.RotationX(this.rotation.e(1)));
-		var Ry = create4x4TransformationMatrix(Matrix.RotationY(this.rotation.e(2)));
-		var Rz = create4x4TransformationMatrix(Matrix.RotationZ(this.rotation.e(3)));
+        // Create rotation matrices for the specified rotation.
+        var Rx = create4x4TransformationMatrix(Matrix.RotationX(this.rotation.e(1)));
+        var Ry = create4x4TransformationMatrix(Matrix.RotationY(this.rotation.e(2)));
+        var Rz = create4x4TransformationMatrix(Matrix.RotationZ(this.rotation.e(3)));
 
-		this.instanceTransform = Rx.multiply(Ry.multiply(Rz.multiply(Tz)));
+        this.instanceTransform = Rx.multiply(Ry.multiply(Rz.multiply(Tz)));
     }
 
-	/**
+    /**
      * Determine the screen position of a given point in world coordinates.
      * In other words, if (x,y,z) is a point in the stick figure's world, this function calculates where that point is on the screen.
-	 * @param {Matrix} worldCoordinatesToScreenCoordinates Matrix to transform world coordinates to screen coordinates.
+     * @param {Matrix} worldCoordinatesToScreenCoordinates Matrix to transform world coordinates to screen coordinates.
      * @return {Vector} Vector describing where the given point is on the user's screen. Note that only the first two parameters of this Vector are relevant: the X and the Y coordinate.
      */
     static calculateScreenPoint(worldPoint, worldCoordinatesToScreenCoordinates) {
-		var worldPointVec4 = $V([worldPoint.e(1), worldPoint.e(2), worldPoint.e(3), 1]);
+        var worldPointVec4 = $V([worldPoint.e(1), worldPoint.e(2), worldPoint.e(3), 1]);
         var screenPoint = worldCoordinatesToScreenCoordinates.multiply(worldPointVec4);
-		return screenPoint;
-	}
+        return screenPoint;
+    }
 
     propagateMatrices(transform) {
         this.calculateMatrix(); // Determines this.instanceTransform.
@@ -47,17 +45,17 @@ class Stick {
         this.end = this.cumulativeTransform.multiply($V([0.0, 0.0, 0.0, 1.0]));
 
         //TODO!+ Need a way for the Observers to distinguish between a stick and a polygon.
-		if (this.polygon === null) {
-			// Calculate the starting point and the ending point of the Stick.
-			// Then send that information to the Observers.
+        if (this.polygon === null) {
+            // Calculate the starting point and the ending point of the Stick.
+            // Then send that information to the Observers.
             //  You MAY want to set the "end" as the "start" for each child node, that saves calculation time.
             //  Note that you still need to set the very first "start" element.
 
-		} else {
-			// Calculate the points of the transformed Polygon.
-			// Then send that information to the Observers.
-			var transformedPolygon = applyMatrixToArray(this.cumulativeTransform, this.polygon);
-		}
+        } else {
+            // Calculate the points of the transformed Polygon.
+            // Then send that information to the Observers.
+            var transformedPolygon = applyMatrixToArray(this.cumulativeTransform, this.polygon);
+    }
 
         for (var i = 0; i < this.children.length; i++) {
             this.children[i].propagateMatrices(this.cumulativeTransform);
@@ -114,8 +112,8 @@ class SvgStickViewContainer {
         if (stick.polygon === null ) {
             view.update( [stick.start, stick.end] );
         } else {
-			var transformedPolygon = applyMatrixToArray(stick.cumulativeTransform, stick.polygon);
-			view.update(transformedPolygon);
+            var transformedPolygon = applyMatrixToArray(stick.cumulativeTransform, stick.polygon);
+            view.update(transformedPolygon);
         }
 
         //TODO!+ Handle the situation that stick.children.length != view.children.length .
@@ -174,27 +172,27 @@ class SvgStickView {
 function showWireframe() {
     var svg = document.getElementById("svg1");
 
-	// Our first humanoid figure. 
+    // Our first humanoid figure. 
     //   1 unit = 1 meter.
-	// Using the coordinate system as follows:
-	//   Z axis is for the height. (Higher value: higher position).
-	//   X axis is for into-screen/away-from-screen. (Negative value is away from the camera).
-	//   Y axis is for left/right. (Negative value is to the left of the camera).
+    // Using the coordinate system as follows:
+    //   Z axis is for the height. (Higher value: higher position).
+    //   X axis is for into-screen/away-from-screen. (Negative value is away from the camera).
+    //   Y axis is for left/right. (Negative value is to the left of the camera).
 
 
-	// Create a matrix that turns these points into screen coordinates.
+    // Create a matrix that turns these points into screen coordinates.
 
-	// First, we create an orthonormal projection matrix.
-	var projectOnYZPlane = ProjectionMatrixYZPlane();
+    // First, we create an orthonormal projection matrix.
+    var projectOnYZPlane = ProjectionMatrixYZPlane();
     var projectOnXZPlane = ProjectionMatrixXZPlane();
 
-	// Second, convert these to screen coordinates.
-	// Note that on computer screens, a lower Y value is HIGHER on the screen. So we must invert the Y value.
-	// We assume a screen of 400 x 400, and want to put our (0,0) in world coordinates at (200,200) in screen coordinates.
-	// Next, let's assume that 1m in world coordinates should be 50 units in screen coordinates.
-	// That results in scale factors 50 and -50 for the X- and Y-scaling. And translation factors 200 and 200 for the X- and Y-translation.
+    // Second, convert these to screen coordinates.
+    // Note that on computer screens, a lower Y value is HIGHER on the screen. So we must invert the Y value.
+    // We assume a screen of 400 x 400, and want to put our (0,0) in world coordinates at (200,200) in screen coordinates.
+    // Next, let's assume that 1m in world coordinates should be 50 units in screen coordinates.
+    // That results in scale factors 50 and -50 for the X- and Y-scaling. And translation factors 200 and 200 for the X- and Y-translation.
     // We then add a second view of the same stick figure, from a different projection plane, and 100 pixels to the right.
-	//TODO?~ Should we do this part using 2D coordinates? If it remains a separate step, it'll save time. If we put all matrices together... it'll be faster to make it a single step.
+    //TODO?~ Should we do this part using 2D coordinates? If it remains a separate step, it'll save time. If we put all matrices together... it'll be faster to make it a single step.
     var projectionToScreen1 = Matrix.create(
         [
             [+50.0,   0.0, 0.0, +200.0],
@@ -206,7 +204,7 @@ function showWireframe() {
 
     var projectionToScreen2 = Matrix.create(
         [
-            [+50.0,   0.0, 0.0, +300.0],  // Next view of the same stick figure is 100 pixels further to the right of the screen.
+            [+50.0,   0.0, 0.0, +400.0],  // Next view of the same stick figure is 200 pixels further to the right of the screen.
             [  0.0, -50.0, 0.0, +200.0],
             [  0.0,   0.0, 0.0,    0.0],
             [  0.0,   0.0, 0.0,    1.0]
@@ -219,16 +217,16 @@ function showWireframe() {
     //TODO!+ Create a second worldToScreen matrix, that looks at our stick figure from the side... and puts it somewhere else on the screen.
     // Maybe put the projection matrices in our AuxiliaryMatrixFunctions code: projectOnOxy, projectOnOxz, ProjectOnOyz .
 
-	// Define the stick figure.
-	// First, we define the center as a stick with length 0.
-	const centerStick = new Stick($V([0.0, 0.0, 0.0]), 0.0, $V([0.0, 0.0,0.0]), []);
+    // Define the stick figure.
+    // First, we define the center as a stick with length 0.
+    const centerStick = new Stick($V([0.0, 0.0, 0.0]), 0.0, $V([0.0, 0.0,0.0]), []);
     const centerStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates1);
 
-	// Then, we add the back to the center.
-	const backStick = new Stick($V([0.0, 0.0, 0.0]), 0.6, $V([0.1, 0.1, 0.1]), []); // centerStick.end , not a hard [0,0,0]
-	centerStick.children.push(backStick);
+    // Then, we add the back to the center.
+    const backStick = new Stick($V([0.0, 0.0, 0.0]), 0.6, $V([0.1, 0.1, 0.1]), []); // centerStick.end , not a hard [0,0,0]
+    centerStick.children.push(backStick);
 
-	// Add a circle for the head.
+    // Add a circle for the head.
     const headCircle = new Stick(backStick.end, 0.30, $V([0.0, 0.0, 0.0]), []);
     headCircle.polygon = generateRegularPolygon(10, 0.15);
     backStick.children.push(headCircle);
@@ -241,7 +239,7 @@ function showWireframe() {
     // Add the stick for  the left upper leg.
     const leftUpperLegStick = new Stick(leftHipStick.end, 0.40, $V([-0.25*Math.PI, 0.0, 0.0]),[]);
     leftHipStick.children.push(leftUpperLegStick);
-	// Add the stick for the left lower leg.
+    // Add the stick for the left lower leg.
     const leftLowerLegStick = new Stick(leftUpperLegStick.end, 0.40, $V([0.0, 0.0, 0.0]), []);
     leftUpperLegStick.children.push(leftLowerLegStick);
     //TODO!+ Add the stick for the left foot.
@@ -269,7 +267,7 @@ function showWireframe() {
     // Add the stick for the left lower arm.
     const leftLowerArmStick = new Stick(leftUpperArmStick.end, 0.30, $V([-1.0, 0.0, 0.0]), []);
     leftUpperArmStick.children.push(leftLowerArmStick);
-	// Add a circle for the hand.
+    // Add a circle for the hand.
     const leftHand = new Stick(leftLowerArmStick.end, 0.0, $V([0.0, 0.0, 0.0]), []);
     leftHand.polygon = generateRegularPolygon(10, 0.05);
     leftLowerArmStick.children.push(leftHand);
@@ -278,13 +276,13 @@ function showWireframe() {
     // Add the stick going to the right shoulder.
     const rightShoulderStick = new Stick(backStick.end, 0.15, $V([0.5 * Math.PI, 0.0, 0.0]), []);
     backStick.children.push(rightShoulderStick);
-	// Add the stick for the right upper arm.
+    // Add the stick for the right upper arm.
     const rightUpperArmStick = new Stick(rightShoulderStick.end, 0.30, $V([+1.0, 0.0, 0.0]), []);
     rightShoulderStick.children.push(rightUpperArmStick);
     // Add the stick for the right lower arm.
     const rightLowerArmStick = new Stick(rightUpperArmStick.end, 0.30, $V([+1.0, 0.0, 0.0]), []);
     rightUpperArmStick.children.push(rightLowerArmStick);
-	// Add a circle for the hand.
+    // Add a circle for the hand.
     var rightHand = new Stick(rightLowerArmStick.end, 0.0, $V([0.0, 0.0, 0.0]), []);
     rightHand.polygon = generateRegularPolygon(10, 0.05);
     rightLowerArmStick.children.push(rightHand);
