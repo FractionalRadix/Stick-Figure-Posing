@@ -1,6 +1,6 @@
 // The Stick class defines a Stick, AND the list of other sticks connected to it.
 class Stick {
-    constructor(start, length, rotation,children) {
+    constructor(start, length, rotation, children) {
         this.start = start;			// Starting point of this Stick instance, in world coordinates. Vector of 3 float values.
         this.length = length;		// Length of the stick in world coordinates. Float.
         this.rotation = rotation;	// Rotation of this Stick instance, applied from the point "start". Vector of 3 float values.
@@ -44,33 +44,13 @@ class Stick {
         this.cumulativeTransform = transform.multiply(this.instanceTransform);
         this.end = this.cumulativeTransform.multiply($V([0.0, 0.0, 0.0, 1.0]));
 
-        //TODO!+ Need a way for the Observers to distinguish between a stick and a polygon.
-        if (this.polygon === null) {
-            // Calculate the starting point and the ending point of the Stick.
-            // Then send that information to the Observers.
-            //  You MAY want to set the "end" as the "start" for each child node, that saves calculation time.
-            //  Note that you still need to set the very first "start" element.
-
-        } else {
-            // Calculate the points of the transformed Polygon.
-            // Then send that information to the Observers.
-            var transformedPolygon = applyMatrixToArray(this.cumulativeTransform, this.polygon);
-    }
-
         for (var i = 0; i < this.children.length; i++) {
             this.children[i].propagateMatrices(this.cumulativeTransform);
         }
     }
 }
 
-//TODO!~ Creating a separate Observer for each Stick feels wrong.
-// Better to have a single Observing class that maintains the SVG elements.
-// It can iterate over the Stick Figure. It should then mimic its structure.
-// If an element is added or removed, the Observing, mimicking class can then add or remove a corresponding SVG element dynamically.
-// Note that we can still use class SvgStickView, just not as an observer.
-// A main class should hold the SvgStickView hierarchy, and be the one notified of changes.
-// That main class could also keep track of the instance of "svg", and pass it to the drawing code as a parameter.
-// So... we start on a StickFigureViewBuilder
+
 class SvgStickViewContainer {
     /**
      * Create a view of a Stick Figure.
@@ -82,11 +62,9 @@ class SvgStickViewContainer {
     constructor(svg, worldToScreen, rootStick) {
         this.svg = svg;
         this.worldToScreen = worldToScreen;
-        this.rootView = this.build(rootStick);     
-        this.rootStick = rootStick; // Will be used in the future, as a starting point for propagating changes.
+        this.rootView = this.build(rootStick);
+        this.rootStick = rootStick;
     }
-
-    //TODO!+ Add ONE listener - for the SvgStickViewContainer. (Already removed them from the Stick class).
 
     /**
      * Accepts a Stick (the root of a Stick Figure), and recursively builds a View for it.
@@ -104,8 +82,6 @@ class SvgStickViewContainer {
 
     // Propagate method - a method that, given a change in the base Stick figure, propagates these changes to the view.
     propagate( ) {
-        console.log(this.rootStick);
-        console.log(this.rootView);
         this.do_propagate(this.rootStick, this.rootView);
     }
     do_propagate(stick, view) {
@@ -131,8 +107,6 @@ class SvgStickViewContainer {
  * It is an Observer of a Stick. Whenever it is notified of a change to the Observed Stick, it redraws its SVG element.
  */
 class SvgStickView {
-    //TODO?~ Maybe the SvgStickView could know for itself if it held a Stick or a Polygon, instead of having to glean this information via "update" ?
-
     /**
      * @param {Object} svg Reference to the SVG element on which we want to draw.
      * @param {Matrix} worldToScreen Matrix that contains the full transform from world coordinates to screen coordinates.
@@ -145,7 +119,6 @@ class SvgStickView {
 
     update(data) {
         //Use the data to draw/update a line/polygon in SVG. Using a pre-specified projection matrix.
-        //console.log(data);
         var screenPoints = applyMatrixToArray(this.worldToScreen, data);
         if (data.length == 2) {
             // It's a stick. Create/update a line segment.
@@ -213,9 +186,6 @@ function showWireframe() {
 
     var worldCoordinatesToScreenCoordinates1 = projectionToScreen1.multiply(projectOnYZPlane);
     var worldCoordinatesToScreenCoordinates2 = projectionToScreen2.multiply(projectOnXZPlane);
-
-    //TODO!+ Create a second worldToScreen matrix, that looks at our stick figure from the side... and puts it somewhere else on the screen.
-    // Maybe put the projection matrices in our AuxiliaryMatrixFunctions code: projectOnOxy, projectOnOxz, ProjectOnOyz .
 
     // Define the stick figure.
     // First, we define the center as a stick with length 0.
@@ -290,35 +260,34 @@ function showWireframe() {
 
     view1 = new SvgStickViewContainer(svg, worldCoordinatesToScreenCoordinates1, centerStick);
     view2 = new SvgStickViewContainer(svg, worldCoordinatesToScreenCoordinates2, centerStick);
-    centerStick.propagateMatrices(Matrix.I(4));
-    view1.propagate();
-    view2.propagate();
+    updateFigureAndViews( );
 
     function modifyRotationAroundXAxis(jointSlider, affectedJoint) {
             var radians = (Math.PI * jointSlider.value)/ 180.0;
             var current = affectedJoint.rotation;
             affectedJoint.rotation = $V([radians, current.e(2), current.e(3)]);
-centerStick.propagateMatrices(Matrix.I(4));
-view1.propagate();
-view2.propagate();
+            updateFigureAndViews( );
     }
 
     function modifyRotationAroundYAxis(jointSlider, affectedJoint) {
             var radians = (Math.PI * jointSlider.value)/ 180.0;
             var current = affectedJoint.rotation;
             affectedJoint.rotation = $V([current.e(1), radians, current.e(3)]);
-centerStick.propagateMatrices(Matrix.I(4));
-view1.propagate();
-view2.propagate();
+            updateFigureAndViews( );
     }
 
     function modifyRotationAroundZAxis(jointSlider, affectedJoint) {
             var radians = (Math.PI * jointSlider.value)/ 180.0;
             var current = affectedJoint.rotation;
             affectedJoint.rotation = $V([current.e(1), current.e(2), radians]);
-centerStick.propagateMatrices(Matrix.I(4));
-view1.propagate();
-view2.propagate();
+            updateFigureAndViews( );
+    }
+
+
+    function updateFigureAndViews( ) {
+        centerStick.propagateMatrices(Matrix.I(4));
+        view1.propagate();
+        view2.propagate();
     }
 
     var spinningAroundAxis = document.getElementById("spinAroundAxis");
@@ -342,4 +311,5 @@ view2.propagate();
     var rightElbow = document.getElementById("rightElbow");
     rightElbow.addEventListener('input', () => modifyRotationAroundYAxis(rightElbow, rightLowerArmStick));
 }
+
 
