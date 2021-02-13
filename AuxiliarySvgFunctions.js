@@ -11,7 +11,7 @@ function addLineSegment(svg, v1, v2) {
     lineSegment.setAttribute("y1", v1.e(2));
     lineSegment.setAttribute("x2", v2.e(1));
     lineSegment.setAttribute("y2", v2.e(2));
-    lineSegment.style.stroke="black";    
+    lineSegment.style.stroke="white";
     lineSegment.style.strokeWidth="1";
     svg.appendChild(lineSegment);
     console.log(lineSegment);
@@ -28,7 +28,7 @@ function addPolygon(svg, points) {
     var path = document.createElementNS("http://www.w3.org/2000/svg", 'path');
     const attributeValue = pointArrayToClosedSVGPath(points);
     path.setAttribute("d", attributeValue);
-    path.style.stroke="black";
+    path.style.stroke="white";
     path.style.strokeWidth="1";
     path.style.fill="none";
     svg.appendChild(path);

@@ -294,6 +294,7 @@ function showWireframe() {
         view2.propagate();
     }
 
+    // Spin and upper body
     var spinningAroundAxis = document.getElementById("spinAroundAxis");
     spinningAroundAxis.addEventListener('input', () => modifyRotationAroundZAxis(spinningAroundAxis, centerStick));
 
@@ -303,17 +304,41 @@ function showWireframe() {
     var torsoForward = document.getElementById("centerForward");
     torsoForward.addEventListener('input', () => modifyRotationAroundYAxis(torsoForward, backStick));
 
+    // Right side (from top to bottom)
+
+    var rightShoulderElevation = document.getElementById("rightShoulderElevation");
+    rightShoulderElevation.addEventListener('input', () => modifyRotationAroundYAxis(rightShoulderElevation, rightUpperArmStick));
+
+    var rightShoulderAwayFromBody = document.getElementById("rightShoulderAwayFromBody");
+    rightShoulderAwayFromBody.addEventListener('input', () => modifyRotationAroundXAxis(rightShoulderAwayFromBody, rightUpperArmStick));
+
+    var rightShoulderAroundOwnAxis = document.getElementById("rightShoulderAroundOwnAxis");
+    rightShoulderAroundOwnAxis.addEventListener('input', () => modifyRotationAroundZAxis(rightShoulderAroundOwnAxis, rightUpperArmStick));
+
+    var rightElbow = document.getElementById("rightElbow");
+    rightElbow.addEventListener('input', () => modifyRotationAroundYAxis(rightElbow, rightLowerArmStick));
+
     var rightKnee = document.getElementById("rightKnee");
     rightKnee.addEventListener('input', () => modifyRotationAroundYAxis(rightKnee, rightLowerLegStick));
 
-    var leftKnee = document.getElementById("leftKnee");
-    leftKnee.addEventListener('input', () => modifyRotationAroundYAxis(leftKnee, leftLowerLegStick));
+    // Left side (from top to bottom)
+
+    var leftShoulderElevation = document.getElementById("leftShoulderElevation");
+    leftShoulderElevation.addEventListener('input', () => modifyRotationAroundYAxis(leftShoulderElevation, leftUpperArmStick));
+
+    var leftShoulderAwayFromBody = document.getElementById("leftShoulderAwayFromBody");
+    leftShoulderAwayFromBody.addEventListener('input', () => modifyRotationAroundXAxis(leftShoulderAwayFromBody, leftUpperArmStick));
+
+    var leftShoulderAroundOwnAxis = document.getElementById('leftShoulderAroundOwnAxis');
+    leftShoulderAroundOwnAxis.addEventListener('input', () => modifyRotationAroundZAxis(leftShoulderAroundOwnAxis, leftUpperArmStick));
 
     var leftElbow = document.getElementById("leftElbow");
     leftElbow.addEventListener('input', () => modifyRotationAroundYAxis(leftElbow, leftLowerArmStick));
 
-    var rightElbow = document.getElementById("rightElbow");
-    rightElbow.addEventListener('input', () => modifyRotationAroundYAxis(rightElbow, rightLowerArmStick));
+    var leftKnee = document.getElementById("leftKnee");
+    leftKnee.addEventListener('input', () => modifyRotationAroundYAxis(leftKnee, leftLowerLegStick));
+
+
 }
 
 

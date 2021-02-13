@@ -14,9 +14,9 @@
     <script language="JavaScript" type="text/javascript" src="AuxiliarySvgFunctions.js">
     </script>
   </head>
-  <body onload="showWireframe()">
+  <body onload="showWireframe()" style="background-color: black;">
 
-    <div style="float:none" class="WFSliderDiv">
+    <div style="margin: 0 auto" class="WFSliderDiv">
         Spin around Z axis (degrees):
         <input type="range" min="0" max="360" value="0" class="WFJointSlider" id="spinAroundAxis">
 
@@ -28,26 +28,51 @@
 
     <p>
 
-    <div style="float:left" class="WFSliderDiv">
-        Right elbow (degrees):
-        <input type="range" min="180" max="360" value="270" class="WFJointSlider" id="rightElbow">
-
-        Right knee (degrees):
-        <input type="range" min="0" max="180" value="90" class="WFJointSlider" id="rightKnee">
+    <div style="float:left">
+        <div class="WFSliderDiv">
+            <b>Right arm</b>
+            <hr>
+            Right upper arm elevation:
+            <input type="range" min="0" max="360" value="180" class="WFJointSlider" id="rightShoulderElevation">
+            Right upper arm away from body:
+            <input type="range" min="0" max="180" value="0" class="WFJointSlider" id="rightShoulderAwayFromBody">
+            Right upper arm around its own axis:
+            <input type="range" min="0" max="90" value="0" class="WFJointSlider" id="rightShoulderAroundOwnAxis">
+            Right elbow:
+            <input type="range" min="180" max="360" value="270" class="WFJointSlider" id="rightElbow">
+        </div>
+        <div class="WFSliderDiv">
+            <b>Right leg</b>
+            <hr>
+            Right knee:
+            <input type="range" min="0" max="180" value="90" class="WFJointSlider" id="rightKnee">
+        </div>
     </div>
 
     <svg id="svg1" width="550" height="400" style="float:left">
-      <!-- Put our first stick figure in the spotlights! -->
-      <!-- circle cx="200" cy="200" r="75" stroke="black" stroke-width="1" fill="yellow" / -->
       <rect x="130" y="120" width="140" height="150" stroke="blue" stroke-width="3" fill="none" rx="15"/>
       <rect x="330" y="120" width="140" height="150" stroke="blue" stroke-width="3" fill="none" rx="15"/>
     </svg>
 
-    <div style="float:left" class="WFSliderDiv">
-        Left elbow (degrees):
-        <input type="range" min="180" max="360" value="270" class="WFJointSlider" id="leftElbow">
-        Left knee (degrees):
-        <input type="range" min="0" max="180" value="90" class="WFJointSlider" id="leftKnee">
+    <div style="float:left">
+        <div class="WFSliderDiv">
+            <b>Left arm</b>
+            <hr>
+            Left upper arm elevation:
+           <input type="range" min="0" max="360" value="180" class="WFJointSlider" id="leftShoulderElevation">
+            Left upper arm away from body:
+            <input type="range" min="0" max="180" value="0" class="WFJointSlider" id="leftShoulderAwayFromBody">
+            Left upper arm around its own axis:
+            <input type="range" min="0" max="90" value="0" class="WFJointSlider" id="leftShoulderAroundOwnAxis">
+            Left elbow:
+            <input type="range" min="180" max="360" value="270" class="WFJointSlider" id="leftElbow">
+        </div>
+        <div class="WFSliderDiv">
+            <b>Left leg</b>
+            <hr>
+            Left knee:
+            <input type="range" min="0" max="180" value="90" class="WFJointSlider" id="leftKnee">
+        </div>
     </div>
 
     <canvas id="canvas3d" width="400" height="400">
