@@ -23,6 +23,8 @@
     -->
     <div style="display: flex; flex-direction: column;">
 
+        <h1 style="color: cyan; text-align: center;">Poseable Stick Figure</h1>
+
         <!-- The top level: controls for moving the torso, and for moving the stick figure as a whole. -->
         <div style="display: flex; flex-direction: row; align-items: center; justify-content: center">
             <div><!-- Dummy element -->&nbsp;</div>
@@ -38,10 +40,10 @@
         </div>
 
         <!-- The next level: controls for the right arm and leg, two views of the stick figure, controls for the left arm and leg. -->
-        <div style="display:flex; flex-direction: row; align-items: center; justify-content: center;">
+        <div style="display: flex; flex-direction: row; align-items: center; justify-content: center;">
 
             <!-- Controls for the right arm and leg. -->
-            <div style="display:flex; flex-direction:column;">
+            <div style="display: flex; flex-direction: column;">
                 <div class="WFSliderDiv">
                     <b>Right arm</b>
                     <hr>
@@ -63,13 +65,15 @@
             </div>
 
             <!-- Views of the stick figure. The SVG for the stick figure is added dynamically by the code. -->
-            <svg id="svg1" width="550" height="400" style="float:left">
-                <rect x="130" y="120" width="140" height="150" stroke="blue" stroke-width="3" fill="none" rx="15"/>
-              <rect x="330" y="120" width="140" height="150" stroke="blue" stroke-width="3" fill="none" rx="15"/>
-            </svg>
+            <div>
+                <svg id="svg1" width="550" height="400">
+                    <rect x="130" y="120" width="140" height="150" stroke="blue" stroke-width="3" fill="none" rx="15"/>
+                    <rect x="330" y="120" width="140" height="150" stroke="blue" stroke-width="3" fill="none" rx="15"/>
+                </svg>
+            </div>
 
             <!-- Controls for the left arm and leg. -->
-            <div style="display:flex; flex-direction:column;">
+            <div style="display: flex; flex-direction: column;">
                 <div class="WFSliderDiv">
                     <b>Left arm</b>
                     <hr>
