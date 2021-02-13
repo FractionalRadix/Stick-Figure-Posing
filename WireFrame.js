@@ -212,7 +212,10 @@ function showWireframe() {
     // Add the stick for the left lower leg.
     const leftLowerLegStick = new Stick(leftUpperLegStick.end, 0.40, $V([0.0, 0.0, 0.0]), []);
     leftUpperLegStick.children.push(leftLowerLegStick);
-    //TODO!+ Add the stick for the left foot.
+    // Add the stick for the left foot.
+    const leftFootStick = new Stick(leftLowerLegStick.end, 0.15, $V([0.0, -0.5 * Math.PI, 0.0]), []);
+    leftLowerLegStick.children.push(leftFootStick);
+
 
     // Add the right leg: from the hip to the toes.
     // Add the stick going to the right hip.
@@ -224,8 +227,9 @@ function showWireframe() {
     // Add the stick for the right lower leg.
     const rightLowerLegStick = new Stick(rightUpperLegStick.end, 0.40, $V([0.0, 0.0, 0.0]), []);
     rightUpperLegStick.children.push(rightLowerLegStick);
-    
-    //TODO!+ Add the stick for the right foot.
+    // Add the stick for the right foot.
+    const rightFootStick = new Stick(rightLowerLegStick.end, 0.15, $V([0.0, -0.5 * Math.PI, 0.0]), []);
+    rightLowerLegStick.children.push(rightFootStick);
 
     // Add the left arm: from the neck (!) to the wrist.
     // Add the stick going to the left shoulder.
