@@ -162,15 +162,15 @@ function showWireframe() {
 
     // Second, convert these to screen coordinates.
     // Note that on computer screens, a lower Y value is HIGHER on the screen. So we must invert the Y value.
-    // We assume a screen of 400 x 400, and want to put our (0,0) in world coordinates at (200,200) in screen coordinates.
+    // We assume a screen of 200 x 200, and want to put our (0,0) in world coordinates at (100,100) in screen coordinates.
     // Next, let's assume that 1m in world coordinates should be 50 units in screen coordinates.
-    // That results in scale factors 50 and -50 for the X- and Y-scaling. And translation factors 200 and 200 for the X- and Y-translation.
-    // We then add a second view of the same stick figure, from a different projection plane, and 100 pixels to the right.
-    //TODO?~ Should we do this part using 2D coordinates? If it remains a separate step, it'll save time. If we put all matrices together... it'll be faster to make it a single step.
+    // That results in scale factors 50 and -50 for the X- and Y-scaling. And translation factors 100 and 100 for the X- and Y-translation.
+    // We then add a second view of the same stick figure, in a separate SVG, using the same transformation.
+    // (Originally, there was one SVG; using two makes it possible to put the headers "Front View" and "Side View" in HTML, allowing it to use to the styles defined for the web page).
     var projectionToScreen1 = Matrix.create(
         [
-            [+50.0,   0.0, 0.0, +200.0],
-            [  0.0, -50.0, 0.0, +200.0],
+            [+50.0,   0.0, 0.0, +100.0],
+            [  0.0, -50.0, 0.0, +100.0],
             [  0.0,   0.0, 0.0,    0.0],
             [  0.0,   0.0, 0.0,    1.0]
         ]
@@ -178,8 +178,8 @@ function showWireframe() {
 
     var projectionToScreen2 = Matrix.create(
         [
-            [+50.0,   0.0, 0.0, +200.0],
-            [  0.0, -50.0, 0.0, +200.0],
+            [+50.0,   0.0, 0.0, +100.0],
+            [  0.0, -50.0, 0.0, +100.0],
             [  0.0,   0.0, 0.0,    0.0],
             [  0.0,   0.0, 0.0,    1.0]
         ]
@@ -191,7 +191,6 @@ function showWireframe() {
     // Define the stick figure.
     // First, we define the center as a stick with length 0.
     const centerStick = new Stick($V([0.0, 0.0, 0.0]), 0.0, $V([0.0, 0.0,0.0]), []);
-    const centerStickView1 = new SvgStickView(svg1, worldCoordinatesToScreenCoordinates1); //TODO?- Is this one still needed?
 
     // Then, we add the back to the center.
     const backStick = new Stick($V([0.0, 0.0, 0.0]), 0.6, $V([0.1, 0.1, 0.1]), []); // centerStick.end , not a hard [0,0,0]
@@ -317,7 +316,7 @@ function showWireframe() {
     rightShoulderAroundOwnAxis.addEventListener('input', () => modifyRotationAroundZAxis(rightShoulderAroundOwnAxis, rightUpperArmStick));
 
     var rightElbow = document.getElementById("rightElbow");
-    rightElbow.addEventListener('input', () => modifyRotationAroundYAxis(rightElbow, rightLowerArmStick));
+    rightElbow.addEventListener('input', () => modifyRotationAroundXAxis(rightElbow, rightLowerArmStick));
 
     var rightKnee = document.getElementById("rightKnee");
     rightKnee.addEventListener('input', () => modifyRotationAroundYAxis(rightKnee, rightLowerLegStick));
@@ -334,12 +333,10 @@ function showWireframe() {
     leftShoulderAroundOwnAxis.addEventListener('input', () => modifyRotationAroundZAxis(leftShoulderAroundOwnAxis, leftUpperArmStick));
 
     var leftElbow = document.getElementById("leftElbow");
-    leftElbow.addEventListener('input', () => modifyRotationAroundYAxis(leftElbow, leftLowerArmStick));
+    leftElbow.addEventListener('input', () => modifyRotationAroundXAxis(leftElbow, leftLowerArmStick));
 
     var leftKnee = document.getElementById("leftKnee");
     leftKnee.addEventListener('input', () => modifyRotationAroundYAxis(leftKnee, leftLowerLegStick));
-
-
 }
 
 

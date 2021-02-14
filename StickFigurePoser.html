@@ -32,7 +32,7 @@
                 Spin around Z axis:
                 <input type="range" min="0" max="360" value="0" class="WFJointSlider" id="spinAroundAxis">
                 Torso bent forwards/backwards:
-                <input type="range" min="-10" max="90" value="0" class="WFJointSlider" id="centerForward">
+                <input type="range" min="-" max="45" value="0" class="WFJointSlider" id="centerForward">
                 Torso bent leftwards/rightwards:
                 <input type="range" min="-20" max="20" value="0" class="WFJointSlider" id="centerSideward">  
             </div>
@@ -54,7 +54,7 @@
                     Right upper arm around its own axis:
                     <input type="range" min="0" max="90" value="0" class="WFJointSlider" id="rightShoulderAroundOwnAxis">
                     Right elbow:
-                    <input type="range" min="180" max="360" value="270" class="WFJointSlider" id="rightElbow">
+                    <input type="range" min="0" max="180" value="270" class="WFJointSlider" id="rightElbow">
                 </div>
                 <div class="WFSliderDiv">
                     <b>Right leg</b>
@@ -66,20 +66,16 @@
 
             <!-- Views of the stick figure. The SVG for the stick figure is added dynamically by the code. -->
             <div style="display: flex; flex-direction: row; align-items: center; justify-content: center">
-                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center">
-                    <div style="align-items: center; justify-content: center">
-                        <span style="color: cyan; text-align: center;">Front view</span>
-                    </div>
-                    <div style="margin: 10px">
-                        <svg id="svg1" width="350" height="400">
-                            <rect x="130" y="120" width="140" height="150" stroke="blue" stroke-width="3" fill="none" rx="15"/>
-                        </svg>
-                    </div>
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 20px;">
+                    <span style="color: cyan; text-align: center;">Front view</span>
+                    <svg id="svg1" width="200" height="200">
+                        <rect x="0" y="0" width="200" height="200" stroke="blue" stroke-width="3" fill="none" rx="15"/>
+                    </svg>
                 </div>
-                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center">
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 20px;">
                     <span style="color: cyan; text-align: center;">Side view</span>
-                    <svg id="svg2" width="350" height="400">
-                        <rect x="130" y="120" width="140" height="150" stroke="blue" stroke-width="3" fill="none" rx="15"/>
+                    <svg id="svg2" width="200" height="200">
+                        <rect x="0" y="0" width="200" height="200" stroke="blue" stroke-width="3" fill="none" rx="15"/>
                     </svg>
                 </div>
             </div>
@@ -96,7 +92,7 @@
                     Left upper arm around its own axis:
                     <input type="range" min="0" max="90" value="0" class="WFJointSlider" id="leftShoulderAroundOwnAxis">
                     Left elbow:
-                    <input type="range" min="180" max="360" value="270" class="WFJointSlider" id="leftElbow">
+                    <input type="range" min="0" max="180" value="270" class="WFJointSlider" id="leftElbow">
                 </div>
                 <div class="WFSliderDiv">
                     <b>Left leg</b>
