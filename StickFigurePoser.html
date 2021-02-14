@@ -26,14 +26,14 @@
         <h1 style="color: cyan; text-align: center;">Poseable Stick Figure</h1>
 
         <!-- The top level: controls for moving the torso, and for moving the stick figure as a whole. -->
-        <div style="display: flex; flex-direction: row; align-items: center; justify-content: center">
+        <div style="display: flex; flex-direction: row; align-items: center; justify-content: center;">
             <div><!-- Dummy element -->&nbsp;</div>
             <div class="WFSliderDiv" style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex-basis: 200px;">
-                Spin around Z axis (degrees):
+                Spin around Z axis:
                 <input type="range" min="0" max="360" value="0" class="WFJointSlider" id="spinAroundAxis">
-                Torso bent forwards/backwards (degrees):
+                Torso bent forwards/backwards:
                 <input type="range" min="-10" max="90" value="0" class="WFJointSlider" id="centerForward">
-                Torso bent leftwards/rightwards (degrees):
+                Torso bent leftwards/rightwards:
                 <input type="range" min="-20" max="20" value="0" class="WFJointSlider" id="centerSideward">  
             </div>
             <div><!-- Dummy element -->&nbsp;</div>
@@ -65,11 +65,23 @@
             </div>
 
             <!-- Views of the stick figure. The SVG for the stick figure is added dynamically by the code. -->
-            <div>
-                <svg id="svg1" width="550" height="400">
-                    <rect x="130" y="120" width="140" height="150" stroke="blue" stroke-width="3" fill="none" rx="15"/>
-                    <rect x="330" y="120" width="140" height="150" stroke="blue" stroke-width="3" fill="none" rx="15"/>
-                </svg>
+            <div style="display: flex; flex-direction: row; align-items: center; justify-content: center">
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center">
+                    <div style="align-items: center; justify-content: center">
+                        <span style="color: cyan; text-align: center;">Front view</span>
+                    </div>
+                    <div style="margin: 10px">
+                        <svg id="svg1" width="350" height="400">
+                            <rect x="130" y="120" width="140" height="150" stroke="blue" stroke-width="3" fill="none" rx="15"/>
+                        </svg>
+                    </div>
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center">
+                    <span style="color: cyan; text-align: center;">Side view</span>
+                    <svg id="svg2" width="350" height="400">
+                        <rect x="130" y="120" width="140" height="150" stroke="blue" stroke-width="3" fill="none" rx="15"/>
+                    </svg>
+                </div>
             </div>
 
             <!-- Controls for the left arm and leg. -->

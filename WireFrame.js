@@ -143,7 +143,8 @@ class SvgStickView {
 }
 
 function showWireframe() {
-    var svg = document.getElementById("svg1");
+    var svg1 = document.getElementById("svg1");
+    var svg2 = document.getElementById("svg2");
 
     // Our first humanoid figure. 
     //   1 unit = 1 meter.
@@ -177,7 +178,7 @@ function showWireframe() {
 
     var projectionToScreen2 = Matrix.create(
         [
-            [+50.0,   0.0, 0.0, +400.0],  // Next view of the same stick figure is 200 pixels further to the right of the screen.
+            [+50.0,   0.0, 0.0, +200.0],
             [  0.0, -50.0, 0.0, +200.0],
             [  0.0,   0.0, 0.0,    0.0],
             [  0.0,   0.0, 0.0,    1.0]
@@ -190,7 +191,7 @@ function showWireframe() {
     // Define the stick figure.
     // First, we define the center as a stick with length 0.
     const centerStick = new Stick($V([0.0, 0.0, 0.0]), 0.0, $V([0.0, 0.0,0.0]), []);
-    const centerStickView1 = new SvgStickView(svg, worldCoordinatesToScreenCoordinates1);
+    const centerStickView1 = new SvgStickView(svg1, worldCoordinatesToScreenCoordinates1); //TODO?- Is this one still needed?
 
     // Then, we add the back to the center.
     const backStick = new Stick($V([0.0, 0.0, 0.0]), 0.6, $V([0.1, 0.1, 0.1]), []); // centerStick.end , not a hard [0,0,0]
@@ -262,8 +263,8 @@ function showWireframe() {
     rightLowerArmStick.children.push(rightHand);
 
 
-    view1 = new SvgStickViewContainer(svg, worldCoordinatesToScreenCoordinates1, centerStick);
-    view2 = new SvgStickViewContainer(svg, worldCoordinatesToScreenCoordinates2, centerStick);
+    view1 = new SvgStickViewContainer(svg1, worldCoordinatesToScreenCoordinates1, centerStick);
+    view2 = new SvgStickViewContainer(svg2, worldCoordinatesToScreenCoordinates2, centerStick);
     updateFigureAndViews( );
 
     function modifyRotationAroundXAxis(jointSlider, affectedJoint) {
