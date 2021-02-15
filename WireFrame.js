@@ -193,13 +193,18 @@ function showWireframe() {
     const centerStick = new Stick($V([0.0, 0.0, 0.0]), 0.0, $V([0.0, 0.0,0.0]), []);
 
     // Then, we add the back to the center.
-    const backStick = new Stick($V([0.0, 0.0, 0.0]), 0.6, $V([0.1, 0.1, 0.1]), []); // centerStick.end , not a hard [0,0,0]
-    centerStick.children.push(backStick);
+    // The back consists of 3 Sticks. When our man bends forwards/backwards, or leftwards/rightwards, all 3 sticks undergo the same transformation.
+    const backStick1 = new Stick(centerStick.end, 0.2, $V([0.1, 0.1, 0.1]), []);
+    centerStick.children.push(backStick1);
+    const backStick2 = new Stick(backStick1.end, 0.2, $V([0.1, 0.1, 0.1]), []);
+    backStick1.children.push(backStick2);
+    const backStick3 = new Stick(backStick2.end, 0.2, $V([0.1, 0.1, 0.1]), []);
+    backStick2.children.push(backStick3);
 
     // Add a circle for the head.
-    const headCircle = new Stick(backStick.end, 0.30, $V([0.0, 0.0, 0.0]), []);
+    const headCircle = new Stick(backStick3.end, 0.30, $V([0.0, 0.0, 0.0]), []);
     headCircle.polygon = generateRegularPolygon(10, 0.15);
-    backStick.children.push(headCircle);
+    backStick3.children.push(headCircle);
 
     // Add the left leg: from the hip to the toes.
     // Add the stick going to the left hip.
@@ -233,8 +238,8 @@ function showWireframe() {
 
     // Add the left arm: from the neck (!) to the wrist.
     // Add the stick going to the left shoulder.
-    const leftShoulderStick = new Stick(backStick.end, 0.15, $V([-0.5 * Math.PI, 0.0, 0.0]), []);
-    backStick.children.push(leftShoulderStick);
+    const leftShoulderStick = new Stick(backStick3.end, 0.15, $V([-0.5 * Math.PI, 0.0, 0.0]), []);
+    backStick3.children.push(leftShoulderStick);
     // Add the stick for the left upper arm.
     const leftUpperArmStick = new Stick(leftShoulderStick.end, 0.30, $V([-1.0, 0.0, 0.0]), []);
     leftShoulderStick.children.push(leftUpperArmStick);
@@ -248,8 +253,8 @@ function showWireframe() {
 
     // Add the right arm: from the neck (!) to the wrist.
     // Add the stick going to the right shoulder.
-    const rightShoulderStick = new Stick(backStick.end, 0.15, $V([0.5 * Math.PI, 0.0, 0.0]), []);
-    backStick.children.push(rightShoulderStick);
+    const rightShoulderStick = new Stick(backStick3.end, 0.15, $V([0.5 * Math.PI, 0.0, 0.0]), []);
+    backStick3.children.push(rightShoulderStick);
     // Add the stick for the right upper arm.
     const rightUpperArmStick = new Stick(rightShoulderStick.end, 0.30, $V([+1.0, 0.0, 0.0]), []);
     rightShoulderStick.children.push(rightUpperArmStick);
@@ -299,10 +304,15 @@ function showWireframe() {
     spinningAroundAxis.addEventListener('input', () => modifyRotationAroundZAxis(spinningAroundAxis, centerStick));
 
     var torsoLeftRight = document.getElementById("centerSideward");
-    torsoLeftRight.addEventListener('input', () => modifyRotationAroundXAxis(torsoLeftRight, backStick));
+    torsoLeftRight.addEventListener('input', () => modifyRotationAroundXAxis(torsoLeftRight, backStick1));
+    torsoLeftRight.addEventListener('input', () => modifyRotationAroundXAxis(torsoLeftRight, backStick2));
+    torsoLeftRight.addEventListener('input', () => modifyRotationAroundXAxis(torsoLeftRight, backStick3));
 
     var torsoForward = document.getElementById("centerForward");
-    torsoForward.addEventListener('input', () => modifyRotationAroundYAxis(torsoForward, backStick));
+    torsoForward.addEventListener('input', () => modifyRotationAroundYAxis(torsoForward, backStick1));
+    torsoForward.addEventListener('input', () => modifyRotationAroundYAxis(torsoForward, backStick2));
+    torsoForward.addEventListener('input', () => modifyRotationAroundYAxis(torsoForward, backStick3));
+
 
     // Right side (from top to bottom)
 
