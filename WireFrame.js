@@ -73,11 +73,45 @@ class SvgStickViewContainer {
     build(stick) {
         var view = new SvgStickView(this.svg, this.worldToScreen);
         view.children = [];
-        for (var i = 0; i < stick.children.length; i++) {
+        for (let i = 0; i < stick.children.length; i++) {
             var childView = this.build(stick.children[i]);
             view.children.push(childView);
         }
         return view;
+    }
+
+    /**
+     * Take the current view, and export it to a (pretty-printed) XML output.
+     */
+    exportPose(stickView, n) {
+        var res = ""; // WAS: stickView.svgElement;
+        // Would like to get the actual textual representation of the SVG element... you'd think JavaScript would have access to it...
+        // Maybe just loop over all attributes?
+        var elt = stickView.svgElement;
+
+        console.log(elt);
+        var d = elt.getAttribute("d");
+        if (d === undefined || d === null) {
+            var x1 = elt.getAttribute("x1");
+            var y1 = elt.getAttribute("y1");
+            var x2 = elt.getAttribute("x2");
+            var y2 = elt.getAttribute("y2");
+            res = "<line x1=" + x1 + " y1=" + y1 + " x2=" + x2 + " y2=" + y2 + ">";
+            //TODO!+ Add style, color, etc...
+        } else {
+            res = "<path d=" + d + ">"
+            //TODO!+ Add style, color, etc...
+        }
+
+        for (let i = 0; i < stickView.children.length; i++) {
+            //TODO!~ Surely JavaScript has more elegant, built-in ways for adding some indentation? Like a "spaces(n)" function?
+            res += '\r\n';
+            for (let j = 0; j < n; j++) {
+                res = res + ' ';
+            }
+            res = res + this.exportPose(stickView.children[i], n+2);
+        }
+        return res;
     }
 
     // Propagate method - a method that, given a change in the base Stick figure, propagates these changes to the view.
@@ -94,7 +128,7 @@ class SvgStickViewContainer {
 
         //TODO!+ Handle the situation that stick.children.length != view.children.length .
         //  In that case, the model (stick) has had sticks added/removed, and we need to deal with the change!
-        for (var i = 0; i < stick.children.length; i++) {
+        for (let i = 0; i < stick.children.length; i++) {
             var currentChildStick = stick.children[i];
             var currentChildView = view.children[i];
             this.do_propagate(currentChildStick, currentChildView);
@@ -347,6 +381,9 @@ function showWireframe() {
 
     var leftKnee = document.getElementById("leftKnee");
     leftKnee.addEventListener('input', () => modifyRotationAroundYAxis(leftKnee, leftLowerLegStick));
+
+    var tmp = view1.exportPose(view1.rootView, 0);
+    console.log(tmp);
 }
 
 
