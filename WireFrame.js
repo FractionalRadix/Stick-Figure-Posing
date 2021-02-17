@@ -89,27 +89,12 @@ class SvgStickViewContainer {
         // Maybe just loop over all attributes?
         var elt = stickView.svgElement;
 
-        console.log(elt);
-        var d = elt.getAttribute("d");
-        if (d === undefined || d === null) {
-            var x1 = elt.getAttribute("x1");
-            var y1 = elt.getAttribute("y1");
-            var x2 = elt.getAttribute("x2");
-            var y2 = elt.getAttribute("y2");
-            res = "<line x1=" + x1 + " y1=" + y1 + " x2=" + x2 + " y2=" + y2 + ">";
-            //TODO!+ Add style, color, etc...
-        } else {
-            res = "<path d=" + d + ">"
-            //TODO!+ Add style, color, etc...
-        }
+        res = stickView.unparse();
 
         for (let i = 0; i < stickView.children.length; i++) {
-            //TODO!~ Surely JavaScript has more elegant, built-in ways for adding some indentation? Like a "spaces(n)" function?
             res += '\r\n';
-            for (let j = 0; j < n; j++) {
-                res = res + ' ';
-            }
-            res = res + this.exportPose(stickView.children[i], n+2);
+            res += ' '.repeat(n);
+            res += this.exportPose(stickView.children[i], n+2);
         }
         return res;
     }
@@ -173,6 +158,23 @@ class SvgStickView {
                 this.svgElement.setAttribute("d", generatedPath);
             }
         }
+    }
+
+    unparse() {
+        var res = null;
+        var d = this.svgElement.getAttribute("d");
+        if (d === undefined || d === null) {
+            var x1 = this.svgElement.getAttribute("x1");
+            var y1 = this.svgElement.getAttribute("y1");
+            var x2 = this.svgElement.getAttribute("x2");
+            var y2 = this.svgElement.getAttribute("y2");
+            res = "<line x1=" + x1 + " y1=" + y1 + " x2=" + x2 + " y2=" + y2 + ">";
+            //TODO!+ Add style, color, etc...
+        } else {
+            res = "<path d=" + d + ">"
+            //TODO!+ Add style, color, etc...
+        }
+        return res;
     }
 }
 
