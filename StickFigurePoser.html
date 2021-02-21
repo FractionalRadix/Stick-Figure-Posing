@@ -108,19 +108,30 @@
         <script type="text/javascript">
             function insertCurrentPose() {
                 var a = document.getElementById('downloadCurrentPose');
-                var str01 = '<!DOCTYPE html>\r\n';
-                var str02 = '<html lang="en">\r\n';
-                var str03 = '<head>\r\n';
-                var str04 = '  <meta charset="UTF-8">\r\n';
-                var str05 = '</head>\r\n';
-                var str06 = '<body>\r\n';
-                var str07 = '  <svg width="200" height="200">\r\n';
-                var str08 = view1.exportPose(view1.rootView, 0);
-                var str09 = '  </svg>\r\n';
-                var str10 = '</body>\r\n';
-                var str11 = '</html>';
-                //var blob = new Blob(["<!DOCTYPE html5><html>"+pose+"</html>"]);
-                var blob = new Blob([str01, str02, str03, str04, str05, str06, str07, str08, str09, str10, str11]);
+                var pose = view1.exportPose(view1.rootView, 0);
+
+                var blob;
+                if (true) {
+                    // Variation one (elegant but doesn't work...)
+                    var str01 = '<!DOCTYPE html>\r\n';
+                    var str02 = '<html lang="en">\r\n';
+                    var str03 = '<head>\r\n';
+                    var str04 = '  <meta charset="UTF-8">\r\n';
+                    var str05 = '</head>\r\n';
+                    var str06 = '<body>\r\n';
+                    var str07 = '  <svg width="200" height="200">\r\n';
+                    var str08 = pose + '\r\n';
+                    var str09 = '  </svg>\r\n';
+                    var str10 = '</body>\r\n';
+                    var str11 = '</html>';
+                    //blob = new Blob(["<!DOCTYPE html5><html>"+pose+"</html>"]);
+                    blob = new Blob([str01, str02, str03, str04, str05, str06, str07, str08, str09, str10, str11]);
+                } else {
+                    // Variation 2 (inelegant, going to find out if it works...)
+                    //console.log("export using variation 2.");
+                    var str01 = '<!DOCTYPE html><html><body><svg width="200" height="200">'+pose+'</svg></body></html>';
+                    blob = new Blob([str01]);
+                }
                 var url = URL.createObjectURL(blob);
                 a.href = url;
             }

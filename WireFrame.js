@@ -168,10 +168,10 @@ class SvgStickView {
             var y1 = this.svgElement.getAttribute("y1");
             var x2 = this.svgElement.getAttribute("x2");
             var y2 = this.svgElement.getAttribute("y2");
-            res = "<line x1=" + x1 + " y1=" + y1 + " x2=" + x2 + " y2=" + y2 + ">";
+            res = '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="black" stroke-width="1"/>';
             //TODO!+ Add style, color, etc...
         } else {
-            res = "<path d=" + d + ">"
+            res = '<path d="' + d + '" stroke="black" stroke-width="1" fill="none"/>'
             //TODO!+ Add style, color, etc...
         }
         return res;
@@ -384,8 +384,8 @@ function showWireframe() {
     var leftKnee = document.getElementById("leftKnee");
     leftKnee.addEventListener('input', () => modifyRotationAroundYAxis(leftKnee, leftLowerLegStick));
 
-    var tmp = view1.exportPose(view1.rootView, 0);
-    console.log(tmp);
+    //var tmp = view1.exportPose(view1.rootView, 0);
+    //console.log(tmp);
 }
 
 
