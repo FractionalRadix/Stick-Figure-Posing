@@ -169,13 +169,45 @@ class SvgStickView {
             var x2 = this.svgElement.getAttribute("x2");
             var y2 = this.svgElement.getAttribute("y2");
             res = '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="black" stroke-width="1"/>';
-            //TODO!+ Add style, color, etc...
+            //TODO!~ Get stroke color and stroke width, and possible other style elements, from the Stick Figure projection proper.
+            //  IF you do, remember to update the "insertCurrentPose()" method to put the stick figure on a background whose color is different from that of the stick figure!
         } else {
             res = '<path d="' + d + '" stroke="black" stroke-width="1" fill="none"/>'
-            //TODO!+ Add style, color, etc...
+            //TODO!~ Get stroke color and stroke width, and possible other style elements, from the Stick Figure projection proper.
+            //  IF you do, remember to update the "insertCurrentPose()" method to put the stick figure on a background whose color is different from that of the stick figure!
         }
         return res;
     }
+}
+
+/**
+ * When the user wishes to "download" the stick figure, grab it and attach it to an invisible link element.
+ * Then click the invisible link element.
+ */
+function insertCurrentPose() {
+    var link = document.createElement('a');
+    link.download = '' ;
+                
+    var pose = view1.exportPose(view1.rootView, 0);
+
+    var blob;
+    var str01 = '<!DOCTYPE html>\r\n';
+    var str02 = '<html lang="en">\r\n';
+    var str03 = '<head>\r\n';
+    var str04 = '  <meta charset="UTF-8">\r\n';
+    var str05 = '</head>\r\n';
+    var str06 = '<body>\r\n';
+    var str07 = '  <svg width="200" height="200">\r\n';
+    var str08 = pose + '\r\n';
+    var str09 = '  </svg>\r\n';
+    var str10 = '</body>\r\n';
+    var str11 = '</html>';
+
+    blob = new Blob([str01, str02, str03, str04, str05, str06, str07, str08, str09, str10, str11], { type: 'text/html'} );
+    var url = URL.createObjectURL(blob);
+    link.href = url;
+    link.click();
+    URL.revokeObjectURL(link.href);
 }
 
 function showWireframe() {
