@@ -396,6 +396,15 @@ function showWireframe() {
     var rightElbow = document.getElementById("rightElbow");
     rightElbow.addEventListener('input', () => modifyRotationAroundXAxis(rightElbow, rightLowerArmStick));
 
+    var rightHipElevation = document.getElementById("rightHipElevation");
+    rightHipElevation.addEventListener('input', () => modifyRotationAroundYAxis(rightHipElevation, rightUpperLegStick));
+
+    var rightHipAwayFromBody = document.getElementById("rightHipAwayFromBody");
+    rightHipAwayFromBody.addEventListener('input', () => modifyRotationAroundXAxis(rightHipAwayFromBody, rightUpperLegStick));
+
+    var rightHipAroundOwnAxis = document.getElementById("rightHipAroundOwnAxis");
+    rightHipAroundOwnAxis.addEventListener('input', () => modifyRotationAroundZAxis(rightHipAroundOwnAxis, rightUpperLegStick));
+
     var rightKnee = document.getElementById("rightKnee");
     rightKnee.addEventListener('input', () => modifyRotationAroundYAxis(rightKnee, rightLowerLegStick));
 
@@ -412,6 +421,15 @@ function showWireframe() {
 
     var leftElbow = document.getElementById("leftElbow");
     leftElbow.addEventListener('input', () => modifyRotationAroundXAxis(leftElbow, leftLowerArmStick));
+
+    var leftHipElevation = document.getElementById("leftHipElevation");
+    leftHipElevation.addEventListener('input', () => modifyRotationAroundYAxis(leftHipElevation, leftUpperLegStick));
+
+    var leftHipAwayFromBody = document.getElementById("leftHipAwayFromBody");
+    leftHipAwayFromBody.addEventListener('input', () => modifyRotationAroundXAxis(leftHipAwayFromBody, leftUpperLegStick));
+
+    var leftHipAroundOwnAxis = document.getElementById("leftHipAroundOwnAxis");
+    leftHipAroundOwnAxis.addEventListener('input', () => modifyRotationAroundZAxis(leftHipAroundOwnAxis, leftUpperLegStick));
 
     var leftKnee = document.getElementById("leftKnee");
     leftKnee.addEventListener('input', () => modifyRotationAroundYAxis(leftKnee, leftLowerLegStick));
